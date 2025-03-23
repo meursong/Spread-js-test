@@ -1,8 +1,14 @@
 <template>
-  <div>
-      <h1>
-          Nuxt.js v3 + SpreadJS 데모
-      </h1>
-      <SpreadSheet />
-  </div>
+  <NuxtLayout>
+    <NuxtPage />
+  </NuxtLayout>
 </template>
+
+<style>
+/* 전역 스타일 */
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Pretendard', sans-serif;
+}
+</style>
