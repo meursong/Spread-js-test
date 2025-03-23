@@ -1,16 +1,12 @@
 <template>
   <div class="relative">
-    <LoadingSpinner v-if="isComponentLoading">
-      스프레드시트 데이터를 불러오는 중...
-    </LoadingSpinner>
-    <gc-spread-sheets class='spread-host' @workbookInitialized="initWorkbook">
+    <gc-spread-sheets class='spread-host'
+                      @workbookInitialized="initWorkbook">
     </gc-spread-sheets>
   </div>
 </template>
 
 <script setup>
-const emit = defineEmits(['sheet-loaded']);
-const isComponentLoading = ref(true);
 
 // loading composable 주입
 const { startLoading, stopLoading } = inject('loading')
@@ -29,6 +25,7 @@ const isLoading = ref(true)
 GC.Spread.Common.CultureManager.culture("ko-kr");
 
 const initWorkbook = (spread) => {
+  startLoading();
   let sheet = spread.getActiveSheet();
 
   // Initial value 바인딩 테스트
@@ -65,10 +62,6 @@ const initWorkbook = (spread) => {
   //
   // // 시트의 데이터 소스를 설정합니다.
   // sheet2.setDataSource(source);
-
-  isComponentLoading.value = false
-  emit('sheet-loaded')
-
 }
 
 /**
@@ -122,7 +115,7 @@ const setInitialValues = (sheet) => {
   sheet.setFormula(9, 1, "=SUM(B2:B3)"); // 수식 설정
 
   // 10. 기본 하이퍼링크
-  sheet.setValue(10, 0, "기본 링크");
+  sheet.setValue(10, 0, "Basic Hyperlink");
   sheet.setHyperlink(10, 1, {
     url: 'https://naver.com',
     tooltip: 'grapecity',
@@ -204,9 +197,8 @@ const setStylesForCells = (sheet) => {
   // 열 너비 조정
   sheet.setColumnWidth(0, 220); // 첫 번째 열
   sheet.setColumnWidth(1, 200); // 두 번째 열
-  isLoading.value = false
+  stopLoading();
 }
-
 
 </script>
 
