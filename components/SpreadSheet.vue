@@ -23,28 +23,8 @@ const initWorkbook = (spread) => {
   // Initial value 바인딩 테스트
   setInitialValues(sheet);
 
-
-  // // 스타일 설정
-  // // B열, C열의 너비를 200으로 설정합니다.
-  // sheet.setColumnWidth(1, 200);
-  // sheet.setColumnWidth(2, 200);
-  // // B2:C2의 배경색과 글자색을 설정합니다.
-  // sheet.getRange(1, 1, 1, 2).backColor("rgb(130, 188, 0)").foreColor("rgb(255, 255, 255)");
-  // // B4:C4의 배경색을 설정합니다.
-  // sheet.getRange(3, 1, 1, 2).backColor("rgb(211, 211, 211)");
-  // // B2:C2의 셀을 병합합니다.
-  // sheet.addSpan(1, 1, 1, 2);
-  // // 각 범위에 테두리를 설정합니다.
-  // sheet.getRange(1, 1, 4, 2).setBorder(
-  //     new GC.Spread.Sheets.LineBorder("Black", GC.Spread.Sheets.LineStyle.thin),
-  //     { all: true }
-  // );
-  // sheet.getRange(1, 1, 4, 2).setBorder(
-  //     new GC.Spread.Sheets.LineBorder("Black", GC.Spread.Sheets.LineStyle.dotted),
-  //     { inside: true }
-  // );
-  // // B2:C2의 병합된 셀에 수직 가운데 정렬을 설정합니다.
-  // sheet.getRange(1, 1, 1, 2).hAlign(GC.Spread.Sheets.HorizontalAlign.center);
+  // style 적용
+  setStylesForCells(sheet);
 
   // 데이터 바인딩
   // 새로운 시트를 추가합니다.
@@ -78,7 +58,6 @@ const initWorkbook = (spread) => {
 
 /**
  * SpreadJS 데이터 바인딩
- *
  */
 const setInitialValues = (sheet) => {
 
@@ -144,6 +123,74 @@ const setInitialValues = (sheet) => {
   sheet.autoFitColumn(1);
 
 };
+
+const setStylesForCells = (sheet) => {
+
+  // 제목 스타일링
+  const titleCell = sheet.getCell(0, 0);
+  titleCell.backColor("#4472C4")
+      .foreColor("white")
+      .font("bold 14pt 맑은 고림")
+      .hAlign(GC.Spread.Sheets.HorizontalAlign.center);
+  sheet.setRowHeight(0, 35);
+
+  // 왼쪽 레이블 컬럼 스타일링
+  const labelRange = sheet.getRange(1, 0, 10, 1);
+  labelRange.backColor("#D9E1F2")
+      .foreColor("#2F528F")
+      .font("bold 11pt 맑은 고림");
+
+  // 데이터 셀 스타일링
+  for (let i = 1; i <= 10; i++) {
+    const cell = sheet.getCell(i, 1);
+
+    // 공통 스타일
+    cell.borderLeft(new GC.Spread.Sheets.LineBorder("#8EA9DB"))
+        .borderRight(new GC.Spread.Sheets.LineBorder("#8EA9DB"))
+        .borderTop(new GC.Spread.Sheets.LineBorder("#8EA9DB"))
+        .borderBottom(new GC.Spread.Sheets.LineBorder("#8EA9DB"));
+
+    // 데이터 타입별 특별 스타일
+    switch(i) {
+      case 2: // Number
+        cell.backColor("#E2EFD9");
+        break;
+      case 3: // Currency
+        cell.backColor("#E2EFD9")
+            .font("bold 11pt 맑은 고림");
+        break;
+      case 4: // Percentage
+        cell.backColor("#E2EFD9");
+        break;
+      case 5: // Date
+      case 6: // Time
+      case 7: // DateTime
+        cell.backColor("#FFF2CC");
+        break;
+      case 8: // Boolean
+        cell.backColor("#FCE4D6");
+        break;
+      case 9: // Formula
+        cell.backColor("#DEEBF7")
+            .font("italic 11pt 맑은 고림");
+        break;
+      case 10: // Hyperlink
+        cell.textDecoration(GC.Spread.Sheets.TextDecorationType.underline);
+        break;
+    }
+  }
+
+  // 전체 테두리 설정
+  sheet.getRange(0, 0, 11, 2).setBorder(
+      new GC.Spread.Sheets.LineBorder("#8EA9DB", GC.Spread.Sheets.LineStyle.thin),
+      { all: true }
+  );
+
+  // 열 너비 조정
+  sheet.setColumnWidth(0, 120); // 첫 번째 열
+  sheet.setColumnWidth(1, 200); // 두 번째 열
+}
+
 
 </script>
 
