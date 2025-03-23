@@ -9,7 +9,7 @@
         <NuxtLink to="/" class="nav-item">
           <span class="nav-text">홈</span>
         </NuxtLink>
-        <NuxtLink to="/spreadsheet/data-type" class="nav-item">
+        <NuxtLink to="/spreadsheet/data-types" class="nav-item">
           <span class="nav-text">데이터 타입</span>
         </NuxtLink>
         <NuxtLink to="/spreadsheet/styles" class="nav-item">
