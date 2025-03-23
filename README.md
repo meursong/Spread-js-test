@@ -13,6 +13,7 @@ See [Vite Configuration Reference](https://vitejs.dev/config/).
 ## Project Setup
 
 ```sh
+nvm use 20.17.0
 npm install
 ```
 
