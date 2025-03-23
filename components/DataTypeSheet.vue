@@ -1,15 +1,26 @@
 <template>
-  <div>
+  <div class="relative">
+    <LoadingSpinner v-if="isComponentLoading">
+      스프레드시트 데이터를 불러오는 중...
+    </LoadingSpinner>
     <gc-spread-sheets class='spread-host' @workbookInitialized="initWorkbook">
     </gc-spread-sheets>
   </div>
 </template>
 
 <script setup>
+const emit = defineEmits(['sheet-loaded']);
+const isComponentLoading = ref(true);
+
+// loading composable 주입
+const { startLoading, stopLoading } = inject('loading')
+
 import '@mescius/spread-sheets/styles/gc.spread.sheets.excel2016colorful.css'
 import { GcSpreadSheets } from '@mescius/spread-sheets-vue'
 import * as GC from "@mescius/spread-sheets"
 import '@mescius/spread-sheets-resources-ko'
+
+const isLoading = ref(true)
 
 // SpreadJS 라이선싱
 // var SpreadJSKey = "xxx";          // 라이선스 입력
@@ -26,34 +37,38 @@ const initWorkbook = (spread) => {
   // style 적용
   setStylesForCells(sheet);
 
-  // 데이터 바인딩
-  // 새로운 시트를 추가합니다.
-  spread.addSheet(1);
+  // // 데이터 바인딩
+  // // 새로운 시트를 추가합니다.
+  // spread.addSheet(1);
+  //
+  // // 추가한 시트를 가져옵니다.
+  // const sheet2 = spread.getSheet(1);
+  //
+  // // 데이터를 입력합니다.
+  // const person = {
+  //   name: '홍길동',
+  //   age: 25,
+  //   gender: '남',
+  //   address: {
+  //     postcode: '10001'
+  //   }
+  // };
+  //
+  // // 셀 바인딩 소스를 설정합니다.
+  // const source = new GC.Spread.Sheets.Bindings.CellBindingSource(person);
+  //
+  // // 지정된 시트 영역에 지정된 셀의 바인딩 경로를 설정합니다.
+  // sheet2.setBindingPath(2, 2, 'name');
+  // sheet2.setBindingPath(3, 2, 'age');
+  // sheet2.setBindingPath(4, 2, 'gender');
+  // sheet2.setBindingPath(5, 2, 'address.postcode');
+  //
+  // // 시트의 데이터 소스를 설정합니다.
+  // sheet2.setDataSource(source);
 
-  // 추가한 시트를 가져옵니다.
-  const sheet2 = spread.getSheet(1);
+  isComponentLoading.value = false
+  emit('sheet-loaded')
 
-  // 데이터를 입력합니다.
-  const person = {
-    name: '홍길동',
-    age: 25,
-    gender: '남',
-    address: {
-      postcode: '10001'
-    }
-  };
-
-  // 셀 바인딩 소스를 설정합니다.
-  const source = new GC.Spread.Sheets.Bindings.CellBindingSource(person);
-
-  // 지정된 시트 영역에 지정된 셀의 바인딩 경로를 설정합니다.
-  sheet2.setBindingPath(2, 2, 'name');
-  sheet2.setBindingPath(3, 2, 'age');
-  sheet2.setBindingPath(4, 2, 'gender');
-  sheet2.setBindingPath(5, 2, 'address.postcode');
-
-  // 시트의 데이터 소스를 설정합니다.
-  sheet2.setDataSource(source);
 }
 
 /**
@@ -189,6 +204,7 @@ const setStylesForCells = (sheet) => {
   // 열 너비 조정
   sheet.setColumnWidth(0, 220); // 첫 번째 열
   sheet.setColumnWidth(1, 200); // 두 번째 열
+  isLoading.value = false
 }
 
 
