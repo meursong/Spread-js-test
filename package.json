@@ -1,0 +1,25 @@
+{
+  "name": "vue-io-xlsx",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "lint": "eslint ../../Users/song/Downloads/vue-io-xlsx/vue-io-xlsx --ext .vue,.js,.jsx,.cjs,.mjs --fix --ignore-path .gitignore"
+  },
+  "dependencies": {
+    "@mescius/spread-sheets": "^17.1.5",
+    "@mescius/spread-sheets-io": "^17.1.5",
+    "@mescius/spread-sheets-vue": "^17.1.5",
+    "file-saver": "^2.0.5",
+    "vue": "^3.4.29"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.0.5",
+    "eslint": "^8.57.0",
+    "eslint-plugin-vue": "^9.23.0",
+    "vite": "^6.2.2"
+  }
+}
