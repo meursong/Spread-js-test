@@ -1,22 +1,24 @@
 <template>
-  <div class="spreadsheet-container">
-    <gc-spread-sheets
-        v-show="showSpreadsheet"
-        class="spread-host"
-        @workbookInitialized="initSpread">
-    </gc-spread-sheets>
+  <div class="spreadsheet-container flex flex-col">
+    <div class="relative">
+      <gc-spread-sheets
+          v-show="showSpreadsheet"
+          class="spread-host"
+          @workbookInitialized="initSpread">
+      </gc-spread-sheets>
+    </div>
     <div class="options-container">
       <div class="option-row">
         <div class="inputContainer">
-          <p>Open Excel File (.xlsx)</p>
+          <p>엑셀 파일 가져오기 (.xlsx)</p>
           <input type="file" id="fileDemo" class="input" @change="changeFileDemo" />
-          <input type="button" id="loadExcel" value="Open Excel" class="button" @click="loadExcel" />
+          <input type="button" id="loadExcel" value="엑셀 파일 열기" class="button" @click="loadExcel" />
           <p>Add Data</p>
-          <input type="button" id="saveExcel" value="Add Revenue" class="button" @click="modifyExcel" />
+          <input type="button" id="saveExcel" value="데이터 넣기 테스트" class="button" @click="modifyExcel" />
 
-          <p>Save Excel File (.xlsx)</p>
+          <p>엑셀 파일 내보내기 (.xlsx)</p>
           <input id="exportFileName" value="export.xlsx" class="input" @change="changeExportFileName" />
-          <input type="button" id="saveExcel" value="Save Excel" class="button" @click="saveExcel" />
+          <input type="button" id="saveExcel" value="저장" class="button" @click="saveExcel" />
         </div>
       </div>
     </div>
@@ -48,7 +50,6 @@ const initSpread = (spreadInstance) => {
   }
 };
 
-
 const changeFileDemo = (e) => {
   importExcelFile.value = e.target.files[0];
 };
@@ -67,27 +68,43 @@ const loadExcel = () => {
   // 스프레드시트를 표시
   showSpreadsheet.value = true;
 
-  let spreadInstance = spread.value;
-  let excelFile = importExcelFile.value;
-  let options = {
-    fileType: GC.Spread.Sheets.FileType.excel,
-  };
-  // Import an existing Excel file to Vue spreadsheet
-  spreadInstance.import(
-      excelFile,
-      () => {
-        console.log("Import successful");
-      },
-      (e) => {
-        console.error("Error during import:", e);
-      },
-      options
-  );
+  // 약간의 지연을 두어 DOM이 업데이트된 후 스프레드 인스턴스가 생성되도록 함
+  nextTick(() => {
+    if (!spread.value) {
+      console.error("스프레드 인스턴스가 초기화되지 않았습니다.");
+      return;
+    }
+
+    const options = {
+      fileType: GC.Spread.Sheets.FileType.excel,
+    };
+
+    // Import an existing Excel file to Vue spreadsheet
+    spread.value.import(
+        importExcelFile.value,
+        () => {
+          console.log("Import successful");
+        },
+        (e) => {
+          console.error("Error during import:", e);
+        },
+        options
+    );
+  }, 300);
 };
 
 const modifyExcel = () => {
-  let spreadInstance = spread.value;
-  let sheet = spreadInstance.getActiveSheet();
+  if (!spread.value) {
+    console.error("스프레드 인스턴스가 초기화되지 않았습니다.");
+    return;
+  }
+
+  const sheet = spread.value.getActiveSheet();
+  if (!sheet) {
+    console.error("활성화된 시트가 없습니다.");
+    return;
+  }
+
   // Add a new row for the next revenue item
   sheet.addRows(newRowIndex.value, 1);
   // Copy styles from an existing row
