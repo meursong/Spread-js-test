@@ -13,7 +13,7 @@
           <p>엑셀 파일 가져오기 (.xlsx)</p>
           <input type="file" id="fileDemo" class="input" @change="changeFileDemo" />
           <input type="button" id="loadExcel" value="엑셀 파일 열기" class="button" @click="loadExcel" />
-          <p>Add Data</p>
+          <p>데이터 부여</p>
           <input type="button" id="saveExcel" value="데이터 넣기 테스트" class="button" @click="modifyExcel" />
 
           <p>엑셀 파일 내보내기 (.xlsx)</p>
@@ -138,7 +138,7 @@ const modifyExcel = () => {
 
 const saveExcel = () => {
   let spreadInstance = spread.value;
-  var fileName = exportFileName.value || "Excel_Export.xlsx";
+  var fileName = exportFileName.value || "엑셀_내보내기.xlsx";
   // Save Vue spreadsheet to local Excel XLSX file
   spreadInstance.export(
       function (blob) {
