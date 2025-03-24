@@ -1,29 +1,34 @@
 <template>
-  <div class="spreadsheet-container flex flex-col">
-    <div class="relative">
+  <div class="main-container">
+    <!-- 스프레드시트 영역 (80%) -->
+    <div class="spreadsheet-area">
       <gc-spread-sheets
           v-show="showSpreadsheet"
           class="spread-host"
           @workbookInitialized="initSpread">
       </gc-spread-sheets>
     </div>
-    <div class="options-container">
-      <div class="option-row">
-        <div class="inputContainer">
-          <p>엑셀 파일 가져오기 (.xlsx)</p>
-          <input type="file" id="fileDemo" class="input" @change="changeFileDemo" />
-          <input type="button" id="loadExcel" value="엑셀 파일 열기" class="button" @click="loadExcel" />
+
+    <!-- 버튼 및 컨트롤 영역 (20%) -->
+    <div class="control-area">
+      <div class="inputContainer">
+        <p>엑셀 파일 가져오기 (.xlsx)</p>
+        <input type="file" id="fileDemo" class="input" @change="changeFileDemo" />
+        <input type="button" id="loadExcel" value="엑셀 파일 열기" class="button" @click="loadExcel" />
+
+        <template v-if="showSpreadsheet">
           <p>데이터 부여</p>
-          <input type="button" id="saveExcel" value="데이터 넣기 테스트" class="button" @click="modifyExcel" />
+          <input type="button" id="saveExcel" value="데이터 부여 테스트" class="button" @click="modifyExcel" />
 
           <p>엑셀 파일 내보내기 (.xlsx)</p>
           <input id="exportFileName" value="export.xlsx" class="input" @change="changeExportFileName" />
           <input type="button" id="saveExcel" value="저장" class="button" @click="saveExcel" />
-        </div>
+        </template>
       </div>
     </div>
   </div>
 </template>
+
 
 <script setup>
 import { ref } from 'vue';
@@ -153,3 +158,71 @@ const saveExcel = () => {
   );
 };
 </script>
+
+
+<style scoped>
+/* 메인 컨테이너 전체 높이와 너비를 설정 */
+.main-container {
+  display: flex;
+  width: 100%;
+  height: 100vh;
+}
+
+/* 스프레드시트 영역 (80%) */
+.spreadsheet-area {
+  width: 80%;
+  height: 100%;
+}
+
+/* 스프레드 호스트가 부모 컨테이너를 채우도록 설정 */
+.spread-host {
+  width: 100%;
+  height: 100%;
+}
+
+/* 컨트롤 영역 (20%) */
+.control-area {
+  width: 20%;
+  height: 100%;
+  padding: 20px;
+  box-sizing: border-box;
+  overflow-y: auto;
+  background-color: #f5f5f5;
+  border-left: 1px solid #ddd;
+}
+
+/* 입력 컨테이너 */
+.inputContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* 입력 필드 스타일 */
+.input {
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+/* 버튼 스타일 */
+.button {
+  padding: 10px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.button:hover {
+  background-color: #45a049;
+}
+
+/* 문단 스타일 */
+p {
+  margin-bottom: 5px;
+  font-weight: bold;
+}
+</style>
