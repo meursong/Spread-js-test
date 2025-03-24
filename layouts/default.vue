@@ -9,25 +9,27 @@
         <NuxtLink to="/" class="nav-item">
           <span class="nav-text">홈</span>
         </NuxtLink>
+        <NuxtLink to="/spreadsheet/excel-test" class="nav-item">
+          <span class="nav-text">엑셀 테스트</span>
+        </NuxtLink>
         <NuxtLink to="/spreadsheet/data-types" class="nav-item">
           <span class="nav-text">데이터 타입</span>
         </NuxtLink>
-        <NuxtLink to="/spreadsheet/styles" class="nav-item">
-          <span class="nav-text">스타일링</span>
+        <NuxtLink to="/spreadsheet/data-binding" class="nav-item">
+          <span class="nav-text">데이터 바인딩</span>
         </NuxtLink>
         <NuxtLink to="/spreadsheet/formulas" class="nav-item">
           <span class="nav-text">수식</span>
-        </NuxtLink>
-        <NuxtLink to="/spreadsheet/data-binding" class="nav-item">
-          <span class="nav-text">데이터 바인딩</span>
         </NuxtLink>
       </div>
     </nav>
 
     <!-- 메인 컨텐츠 영역 -->
-    <main class="content">
-      <slot />
-    </main>
+    <client-only>
+      <main class="content">
+        <slot />
+      </main>
+    </client-only>
   </div>
 </template>
 
@@ -116,3 +118,5 @@
   }
 }
 </style>
+<script setup lang="ts">
+</script>
