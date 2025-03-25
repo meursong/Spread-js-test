@@ -11,6 +11,7 @@
         <input
           v-model="formulaText"
           @keyup.enter="applyFormula"
+          @click="copyFormulaToClipboard"
           placeholder="수식을 입력하세요"
         />
       </div>
@@ -219,6 +220,25 @@ const getColumnName = (index) => {
     index = Math.floor(index / 26) - 1;
   }
   return name;
+};
+
+// 수식을 클립보드에 복사하는 함수
+const copyFormulaToClipboard = () => {
+  if (!formulaText.value) return;
+
+  navigator.clipboard.writeText(formulaText.value)
+    .then(() => {
+      // 선택적: 복사 성공 표시
+      const originalBorderColor = document.querySelector('.formula-bar').style.borderColor;
+      document.querySelector('.formula-bar').style.borderColor = '#4CAF50';
+
+      setTimeout(() => {
+        document.querySelector('.formula-bar').style.borderColor = originalBorderColor;
+      }, 500);
+    })
+    .catch(err => {
+      console.error('클립보드 복사 실패:', err);
+    });
 };
 
 </script>
