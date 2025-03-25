@@ -1,10 +1,10 @@
 <template>
   <div>
-    <h1 class="text-2xl font-bold mb-6">데이터 타입</h1>
+    <h1 class="text-2xl font-bold mb-6">차트, 그래프</h1>
     <ClientOnly>
       <Suspense>
         <template #default>
-          <DataTypeSheet @sheet-loaded="onSheetLoaded" />
+          <ChartAndGraphSheet @sheet-loaded="onSheetLoaded" />
         </template>
         <template #fallback>
           <LoadingSpinner>

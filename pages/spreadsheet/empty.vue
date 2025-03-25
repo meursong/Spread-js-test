@@ -1,10 +1,10 @@
 <template>
   <div>
-    <h1 class="text-2xl font-bold mb-6">데이터 타입</h1>
+    <h1 class="text-2xl font-bold mb-6">빈 엑셀 시트</h1>
     <ClientOnly>
       <Suspense>
         <template #default>
-          <DataTypeSheet @sheet-loaded="onSheetLoaded" />
+          <EmptySheet @sheet-loaded="onSheetLoaded" />
         </template>
         <template #fallback>
           <LoadingSpinner>
@@ -19,6 +19,8 @@
 
 <script setup>
 // loading composable 주입
+import Empty from "~/pages/spreadsheet/empty.vue";
+
 const { stopLoading } = inject('loading')
 
 const onSheetLoaded = () => {

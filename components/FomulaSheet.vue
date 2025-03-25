@@ -1,14 +1,27 @@
 <template>
   <div class="container">
-    <div class="control-panel">
-      <button class="action-button" @click="calculateAll">계산 실행</button>
-      <button class="action-button" @click="checkFormulas">수식 확인</button>
-    </div>
+    <!-- 컴포넌트화된 툴바 사용 -->
+    <RibonMenu
+      v-model:formulaText="formulaText"
+      v-model:selectedFont="selectedFont"
+      v-model:fontSize="fontSize"
+      v-model:textColor="textColor"
+      v-model:backgroundColor="backgroundColor"
+      v-model:isBold="isBold"
+      v-model:isItalic="isItalic"
+      v-model:isUnderline="isUnderline"
+      :spread="spreadRef"
+      :currentSelection="currentSelection"
+      @formula-applied="onFormulaApplied"
+      @style-updated="onStyleUpdated"
+    />
+
+
     <div class="relative">
       <gc-spread-sheets
           class="spread-host"
           @workbookInitialized="initWorkbook"
-          @valueChanged="onValueChanged"
+          @selectionChanged="onSelectionChanged"
       >
       </gc-spread-sheets>
     </div>
@@ -31,47 +44,16 @@ GC.Spread.Common.CultureManager.culture("ko-kr");
 // spread 객체를 ref로 관리
 const spreadRef = ref(null);
 
-// 샘플 데이터와 수식 설정
-const sampleData = [
-  { label: '숫자 1', value: 10 },
-  { label: '숫자 2', value: 20 },
-  { label: 'SUM 수식', formula: '=SUM(B1:B2)' },
-  { label: 'AVERAGE 수식', formula: '=AVERAGE(B1:B2)' },
-  { label: 'MAX 수식', formula: '=MAX(B1:B2)' },
-  { label: 'MIN 수식', formula: '=MIN(B1:B2)' },
-  { label: 'COUNT 수식', formula: '=COUNT(B1:B2)' },
-  { label: '조건부 수식', formula: '=IF(B1>B2,"숫자1이 크다","숫자2가 크다")' },
-  { label: '반올림 수식', formula: '=ROUND(B1/3,2)' },
-  { label: '문자결합 수식', formula: '=CONCATENATE("계산값: ",B1)' }
-];
-
-// 스타일 설정 함수
-const setStyles = (sheet) => {
-  sampleData.forEach((item, index) => {
-    // 레이블 셀 스타일링
-    const labelStyle = new GC.Spread.Sheets.Style();
-    labelStyle.backColor = "#4472C4";
-    labelStyle.foreColor = "white";
-    labelStyle.font = "bold 12pt 맑은 고딕";
-    labelStyle.hAlign = GC.Spread.Sheets.HorizontalAlign.center;
-    sheet.setStyle(index, 0, labelStyle);
-
-    // 값/수식 셀 스타일링
-    const valueStyle = new GC.Spread.Sheets.Style();
-    valueStyle.font = "11pt 맑은 고딕";
-
-    if (item.formula) {
-      valueStyle.backColor = "#FFE699"; // 수식 셀 강조
-    } else {
-      valueStyle.backColor = "#E6E6E6";
-    }
-    sheet.setStyle(index, 1, valueStyle);
-  });
-
-  // 컬럼 너비 설정
-  sheet.setColumnWidth(0, 150);
-  sheet.setColumnWidth(1, 250);
-};
+// 서식 설정을 위한 상태 추가
+const selectedFont = ref('맑은 고딕');
+const fontSize = ref(11);
+const isBold = ref(false);
+const isItalic = ref(false);
+const isUnderline = ref(false);
+const textColor = ref('#000000');
+const backgroundColor = ref('#ffffff');
+const formulaText = ref('');
+const currentSelection = ref(null);
 
 // 워크북 초기화
 const initWorkbook = (spread) => {
@@ -81,23 +63,6 @@ const initWorkbook = (spread) => {
     spreadRef.value = spread;
 
     const sheet = spread.getActiveSheet();
-
-    // 자동 계산 설정
-    spread.options.calcOnDemand = false; // 자동 계산 활성화
-
-    // 데이터와 수식 설정
-    sampleData.forEach((item, index) => {
-      sheet.setValue(index, 0, item.label);
-      if (item.formula) {
-        sheet.setFormula(index, 1, item.formula);
-      } else {
-        sheet.setValue(index, 1, item.value);
-      }
-    });
-
-    // 스타일 적용
-    setStyles(sheet);
-
   } catch (error) {
     console.error('스프레드시트 초기화 중 오류:', error);
   } finally {
@@ -105,71 +70,108 @@ const initWorkbook = (spread) => {
   }
 };
 
-// 값 변경 이벤트 핸들러
-const onValueChanged = (args) => {
-  const { sheet, row, col, newValue } = args;
-  console.log(`셀 (${row}, ${col}) 변경됨: ${newValue}`);
+// 수식 적용 후 콜백
+const onFormulaApplied = (formula) => {
+  console.log('수식이 적용되었습니다:', formula);
 };
 
-// 모든 수식 재계산
-const calculateAll = () => {
-  if (spreadRef.value) {
-    spreadRef.value.calculateAll();
+// 스타일 업데이트 후 콜백
+const onStyleUpdated = () => {
+  console.log('스타일이 업데이트되었습니다.');
+};
+
+// 선택 영역 변경 이벤트 핸들러
+const onSelectionChanged = (e) => {
+  const sheet = spreadRef.value.getActiveSheet();
+  const selections = sheet.getSelections();
+
+  if (selections && selections.length > 0) {
+    currentSelection.value = selections[0];
+
+    // 선택된 셀의 수식 가져오기
+    const formula = sheet.getFormula(
+      currentSelection.value.row,
+      currentSelection.value.col
+    );
+
+    formulaText.value = formula ? '=' + formula : '';
+
+    // 서식 정보도 업데이트
+    updateFormatInfo();
   }
 };
 
-// 수식 확인
-const checkFormulas = () => {
-  if (!spreadRef.value) {
-    alert('스프레드시트가 초기화되지 않았습니다.');
-    return;
-  }
+// 선택된 셀의 서식 정보 업데이트 함수
+const updateFormatInfo = () => {
+  if (!spreadRef.value || !currentSelection.value) return;
 
   const sheet = spreadRef.value.getActiveSheet();
+  const { row, col } = currentSelection.value;
 
-  let message = "현재 수식 상태:\n\n";
-  sampleData.forEach((item, index) => {
-    if (item.formula) {
-      const formula = sheet.getFormula(index, 1);
-      const value = sheet.getValue(index, 1);
-      message += `${item.label}:\n수식: ${formula}\n결과: ${value}\n\n`;
+  // 스타일 정보 가져오기
+  const style = sheet.getStyle(row, col);
+
+  if (style) {
+    // 폰트 패밀리
+    if (style.font && style.font.family) {
+      selectedFont.value = style.font.family;
     }
-  });
 
-  alert(message);
+    // 폰트 크기
+    if (style.font && style.font.size) {
+      fontSize.value = parseInt(style.font.size);
+    }
+
+    // 굵게
+    isBold.value = style.font && style.font.bold === true;
+
+    // 기울임
+    isItalic.value = style.font && style.font.italic === true;
+
+    // 밑줄
+    isUnderline.value = style.font && style.font.underline === true;
+
+    // 텍스트 색상
+    if (style.foreColor) {
+      textColor.value = style.foreColor;
+    }
+
+    // 배경 색상
+    if (style.backColor) {
+      backgroundColor.value = style.backColor;
+    }
+  } else {
+    // 스타일이 없는 경우 기본값으로 설정
+    selectedFont.value = '맑은 고딕';
+    fontSize.value = 11;
+    isBold.value = false;
+    isItalic.value = false;
+    isUnderline.value = false;
+    textColor.value = '#000000';
+    backgroundColor.value = '#ffffff';
+  }
 };
 
 </script>
 
 <style scoped>
 .container {
-  padding: 1rem;
-}
-
-.control-panel {
-  margin-bottom: 1rem;
   display: flex;
-  gap: 1rem;
+  flex-direction: column;
+  height: 100%;
 }
 
-.action-button {
-  padding: 0.5rem 1rem;
-  background-color: #4472C4;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-weight: bold;
-}
-
-.action-button:hover {
-  background-color: #365899;
+.relative {
+  position: relative;
+  flex: 1;
+  min-height: 400px;
 }
 
 .spread-host {
-  width: 90vw;
-  height: 80vh;
-  border: 1px solid #ccc;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
 }
 </style>

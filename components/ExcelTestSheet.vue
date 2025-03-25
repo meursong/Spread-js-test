@@ -17,9 +17,6 @@
         <input type="button" id="loadExcel" value="엑셀 파일 열기" class="button" @click="loadExcel" />
 
         <template v-if="showSpreadsheet">
-          <p>데이터 부여</p>
-          <input type="button" id="saveExcel" value="데이터 부여 테스트" class="button" @click="modifyExcel" />
-
           <p>엑셀 파일 내보내기 (.xlsx)</p>
           <input id="exportFileName" value="export.xlsx" class="input" @change="changeExportFileName" />
           <input type="button" id="saveExcel" value="저장" class="button" @click="saveExcel" />
@@ -171,7 +168,7 @@ const saveExcel = () => {
 /* 스프레드시트 영역 (80%) */
 .spreadsheet-area {
   width: 80%;
-  height: 100%;
+  height: 80%;
 }
 
 /* 스프레드 호스트가 부모 컨테이너를 채우도록 설정 */
