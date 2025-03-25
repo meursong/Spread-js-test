@@ -1,90 +1,26 @@
 <template>
   <div class="container">
-    <div class="control-panel">
-      <button class="action-button" @click="insertFunction('SUM')">=SUM()</button>
-      <button class="action-button" @click="insertFunction('COUNT')">=COUNT()</button>
-      <button class="action-button" @click="insertFunction('MAX')">=MAX()</button>
-      <button class="action-button" @click="insertFunction('MIN')">=MIN()</button>
-      <!-- 수식 입력 바 -->
-      <div class="formula-bar">
-        <span>fx</span>
-        <input
-          v-model="formulaText"
-          @keyup.enter="applyFormula"
-          @click="copyFormulaToClipboard"
-          placeholder="수식을 입력하세요"
-        />
-      </div>
-    </div>
-    <div class="control-panel">
-      <button class="action-button" @click="mergeCells">선택 영역 병합</button>
-      <button class="action-button" @click="unmergeCells">병합 해제</button>
-    </div>
+    <!-- 컴포넌트화된 툴바 사용 -->
+    <RibonMenu
+      v-model:formulaText="formulaText"
+      v-model:selectedFont="selectedFont"
+      v-model:fontSize="fontSize"
+      v-model:textColor="textColor"
+      v-model:backgroundColor="backgroundColor"
+      v-model:isBold="isBold"
+      v-model:isItalic="isItalic"
+      v-model:isUnderline="isUnderline"
+      :spread="spreadRef"
+      :currentSelection="currentSelection"
+      @formula-applied="onFormulaApplied"
+      @style-updated="onStyleUpdated"
+    />
 
-    <!-- 텍스트 서식 패널 추가 -->
-    <div class="control-panel formatting-panel">
-      <div class="format-group">
-        <select class="format-control" v-model="selectedFont" @change="applyFont">
-          <option value="맑은 고딕">맑은 고딕</option>
-          <option value="굴림">굴림</option>
-          <option value="돋움">돋움</option>
-          <option value="바탕">바탕</option>
-          <option value="Arial">Arial</option>
-          <option value="Verdana">Verdana</option>
-          <option value="Times New Roman">Times New Roman</option>
-        </select>
-
-        <select class="format-control" v-model="fontSize" @change="applyFontSize">
-          <option v-for="size in [8, 9, 10, 11, 12, 14, 16, 18, 20, 24, 28, 32, 36]" :key="size" :value="size">
-            {{ size }}pt
-          </option>
-        </select>
-      </div>
-
-      <div class="format-group">
-        <button class="format-button" :class="{active: isBold}" @click="toggleBold" title="굵게">
-          <strong>B</strong>
-        </button>
-        <button class="format-button" :class="{active: isItalic}" @click="toggleItalic" title="기울임">
-          <em>I</em>
-        </button>
-        <button class="format-button" :class="{active: isUnderline}" @click="toggleUnderline" title="밑줄">
-          <u>U</u>
-        </button>
-      </div>
-
-      <div class="format-group">
-        <!-- 텍스트 정렬 버튼 -->
-        <button class="format-button" @click="applyAlignment('left')" title="왼쪽 정렬">
-          ◀
-        </button>
-        <button class="format-button" @click="applyAlignment('center')" title="가운데 정렬">
-          ■
-        </button>
-        <button class="format-button" @click="applyAlignment('right')" title="오른쪽 정렬">
-          ▶
-        </button>
-      </div>
-
-      <!-- 색상 선택 도구 -->
-      <div class="format-group">
-        <div class="color-picker">
-          <label>글자색:</label>
-          <input type="color" v-model="textColor" @change="applyTextColor" />
-        </div>
-
-        <div class="color-picker">
-          <label>배경색:</label>
-          <input type="color" v-model="backgroundColor" @change="applyBackgroundColor" />
-        </div>
-      </div>
-    </div>
 
     <div class="relative">
       <gc-spread-sheets
           class="spread-host"
           @workbookInitialized="initWorkbook"
-          @valueChanged="onValueChanged"
           @selectionChanged="onSelectionChanged"
       >
       </gc-spread-sheets>
@@ -108,20 +44,6 @@ GC.Spread.Common.CultureManager.culture("ko-kr");
 // spread 객체를 ref로 관리
 const spreadRef = ref(null);
 
-// 샘플 데이터와 수식 설정
-const sampleData = [
-  { label: '숫자 1', value: 10 },
-  { label: '숫자 2', value: 20 },
-  { label: 'SUM 수식', formula: '=SUM(B1:B2)' },
-  { label: 'AVERAGE 수식', formula: '=AVERAGE(B1:B2)' },
-  { label: 'MAX 수식', formula: '=MAX(B1:B2)' },
-  { label: 'MIN 수식', formula: '=MIN(B1:B2)' },
-  { label: 'COUNT 수식', formula: '=COUNT(B1:B2)' },
-  { label: '조건부 수식', formula: '=IF(B1>B2,"숫자1이 크다","숫자2가 크다")' },
-  { label: '반올림 수식', formula: '=ROUND(B1/3,2)' },
-  { label: '문자결합 수식', formula: '=CONCATENATE("계산값: ",B1)' }
-];
-
 // 서식 설정을 위한 상태 추가
 const selectedFont = ref('맑은 고딕');
 const fontSize = ref(11);
@@ -130,224 +52,32 @@ const isItalic = ref(false);
 const isUnderline = ref(false);
 const textColor = ref('#000000');
 const backgroundColor = ref('#ffffff');
+const formulaText = ref('');
+const currentSelection = ref(null);
 
-// 스타일 설정 함수
-const setStyles = (sheet) => {
-  sampleData.forEach((item, index) => {
-    // 레이블 셀 스타일링
-    const labelStyle = new GC.Spread.Sheets.Style();
-    labelStyle.backColor = "#4472C4";
-    labelStyle.foreColor = "white";
-    labelStyle.font = "bold 12pt 맑은 고딕";
-    labelStyle.hAlign = GC.Spread.Sheets.HorizontalAlign.center;
-    sheet.setStyle(index, 0, labelStyle);
+// 워크북 초기화
+const initWorkbook = (spread) => {
+  startLoading();
+  try {
+    // spread 객체 저장
+    spreadRef.value = spread;
 
-    // 값/수식 셀 스타일링
-    const valueStyle = new GC.Spread.Sheets.Style();
-    valueStyle.font = "11pt 맑은 고딕";
-
-    if (item.formula) {
-      valueStyle.backColor = "#FFE699"; // 수식 셀 강조
-    } else {
-      valueStyle.backColor = "#E6E6E6";
-    }
-    sheet.setStyle(index, 1, valueStyle);
-  });
-
-  // 컬럼 너비 설정
-  sheet.setColumnWidth(0, 150);
-  sheet.setColumnWidth(1, 250);
-};
-
-// 선택된 셀의 서식 정보 업데이트
-const updateFormatInfo = () => {
-  if (!spreadRef.value || !currentSelection.value) return;
-
-  const sheet = spreadRef.value.getActiveSheet();
-  const { row, col } = currentSelection.value;
-  const style = sheet.getStyle(row, col);
-
-  if (style) {
-    // 글꼴 정보 파싱
-    if (style.font) {
-      const fontInfo = style.font.split(' ');
-
-      // 볼드 체크
-      isBold.value = style.font.includes('bold');
-
-      // 이탤릭 체크
-      isItalic.value = style.font.includes('italic');
-
-      // 글꼴 크기 (예: '11pt 맑은 고딕' 형식에서 추출)
-      const sizeMatch = style.font.match(/(\d+)pt/);
-      if (sizeMatch) {
-        fontSize.value = parseInt(sizeMatch[1]);
-      }
-
-      // 글꼴 이름
-      const fontFamilyParts = style.font.split('pt ');
-      if (fontFamilyParts.length > 1) {
-        selectedFont.value = fontFamilyParts[1].replace(/bold|italic|\s+/g, ' ').trim();
-      }
-    }
-
-    // 색상 정보
-    if (style.foreColor) {
-      textColor.value = style.foreColor;
-    }
-
-    if (style.backColor) {
-      backgroundColor.value = style.backColor;
-    }
+    const sheet = spread.getActiveSheet();
+  } catch (error) {
+    console.error('스프레드시트 초기화 중 오류:', error);
+  } finally {
+    stopLoading();
   }
 };
 
-// 선택된 셀에 서식 적용 함수
-const applyStyleToSelection = (styleUpdater) => {
-  if (!spreadRef.value || !currentSelection.value) return;
-
-  const sheet = spreadRef.value.getActiveSheet();
-  const { row, col, rowCount, colCount } = currentSelection.value;
-
-  // 선택된 영역의 모든 셀에 스타일 적용
-  for (let r = row; r < row + rowCount; r++) {
-    for (let c = col; c < col + colCount; c++) {
-      // 기존 스타일 가져오기
-      let style = sheet.getStyle(r, c) || new GC.Spread.Sheets.Style();
-
-      // 스타일 업데이트
-      style = styleUpdater(style);
-
-      // 업데이트된 스타일 적용
-      sheet.setStyle(r, c, style);
-    }
-  }
+// 수식 적용 후 콜백
+const onFormulaApplied = (formula) => {
+  console.log('수식이 적용되었습니다:', formula);
 };
 
-// 글꼴 적용
-const applyFont = () => {
-  applyStyleToSelection((style) => {
-    // 기존 글꼴 정보 유지하면서 글꼴만 변경
-    const fontParts = (style.font || '11pt 맑은 고딕').split('pt ');
-    const fontWeight = isBold.value ? 'bold' : '';
-    const fontStyle = isItalic.value ? 'italic' : '';
-    const fontWeightAndStyle = (fontWeight + ' ' + fontStyle).trim();
-
-    style.font = `${fontSize.value}pt ${selectedFont.value}`;
-    if (fontWeightAndStyle) {
-      style.font = `${fontWeightAndStyle} ${style.font}`;
-    }
-
-    return style;
-  });
-};
-
-// 글꼴 크기 적용
-const applyFontSize = () => {
-  applyStyleToSelection((style) => {
-    // 기존 글꼴 정보 유지하면서 크기만 변경
-    const fontParts = (style.font || '11pt 맑은 고딕').split('pt ');
-    const fontWeight = isBold.value ? 'bold' : '';
-    const fontStyle = isItalic.value ? 'italic' : '';
-    const fontWeightAndStyle = (fontWeight + ' ' + fontStyle).trim();
-
-    style.font = `${fontSize.value}pt ${selectedFont.value}`;
-    if (fontWeightAndStyle) {
-      style.font = `${fontWeightAndStyle} ${style.font}`;
-    }
-
-    return style;
-  });
-};
-
-// 굵게 설정
-const toggleBold = () => {
-  isBold.value = !isBold.value;
-
-  applyStyleToSelection((style) => {
-    // 기존 글꼴 정보 유지하면서 굵기만 변경
-    const fontParts = (style.font || '11pt 맑은 고딕').split('pt ');
-    const fontStyle = isItalic.value ? 'italic' : '';
-    const fontWeightAndStyle = ((isBold.value ? 'bold' : '') + ' ' + fontStyle).trim();
-
-    style.font = `${fontSize.value}pt ${selectedFont.value}`;
-    if (fontWeightAndStyle) {
-      style.font = `${fontWeightAndStyle} ${style.font}`;
-    }
-
-    return style;
-  });
-};
-
-// 기울임꼴 설정
-const toggleItalic = () => {
-  isItalic.value = !isItalic.value;
-
-  applyStyleToSelection((style) => {
-    // 기존 글꼴 정보 유지하면서 기울임만 변경
-    const fontParts = (style.font || '11pt 맑은 고딕').split('pt ');
-    const fontWeight = isBold.value ? 'bold' : '';
-    const fontWeightAndStyle = (fontWeight + ' ' + (isItalic.value ? 'italic' : '')).trim();
-
-    style.font = `${fontSize.value}pt ${selectedFont.value}`;
-    if (fontWeightAndStyle) {
-      style.font = `${fontWeightAndStyle} ${style.font}`;
-    }
-
-    return style;
-  });
-};
-
-// 밑줄 설정
-const toggleUnderline = () => {
-  isUnderline.value = !isUnderline.value;
-
-  applyStyleToSelection((style) => {
-    style.textDecoration = isUnderline.value
-      ? GC.Spread.Sheets.TextDecorationType.underline
-      : GC.Spread.Sheets.TextDecorationType.none;
-    return style;
-  });
-};
-
-// 텍스트 정렬 적용
-const applyAlignment = (align) => {
-  let hAlign;
-
-  switch (align) {
-    case 'left':
-      hAlign = GC.Spread.Sheets.HorizontalAlign.left;
-      break;
-    case 'center':
-      hAlign = GC.Spread.Sheets.HorizontalAlign.center;
-      break;
-    case 'right':
-      hAlign = GC.Spread.Sheets.HorizontalAlign.right;
-      break;
-    default:
-      hAlign = GC.Spread.Sheets.HorizontalAlign.general;
-  }
-
-  applyStyleToSelection((style) => {
-    style.hAlign = hAlign;
-    return style;
-  });
-};
-
-// 글자색 적용
-const applyTextColor = () => {
-  applyStyleToSelection((style) => {
-    style.foreColor = textColor.value;
-    return style;
-  });
-};
-
-// 배경색 적용
-const applyBackgroundColor = () => {
-  applyStyleToSelection((style) => {
-    style.backColor = backgroundColor.value;
-    return style;
-  });
+// 스타일 업데이트 후 콜백
+const onStyleUpdated = () => {
+  console.log('스타일이 업데이트되었습니다.');
 };
 
 // 선택 영역 변경 이벤트 핸들러
@@ -371,215 +101,56 @@ const onSelectionChanged = (e) => {
   }
 };
 
-// 워크북 초기화
-const initWorkbook = (spread) => {
-  startLoading();
-  try {
-    // spread 객체 저장
-    spreadRef.value = spread;
-
-    const sheet = spread.getActiveSheet();
-
-    // 자동 계산 설정
-    spread.options.calcOnDemand = false; // 자동 계산 활성화
-
-    // 데이터와 수식 설정
-    sampleData.forEach((item, index) => {
-      sheet.setValue(index, 0, item.label);
-      if (item.formula) {
-        sheet.setFormula(index, 1, item.formula);
-      } else {
-        sheet.setValue(index, 1, item.value);
-      }
-    });
-
-    // 스타일 적용
-    setStyles(sheet);
-
-  } catch (error) {
-    console.error('스프레드시트 초기화 중 오류:', error);
-  } finally {
-    stopLoading();
-  }
-};
-
-// 값 변경 이벤트 핸들러
-const onValueChanged = (args) => {
-  const { sheet, row, col, newValue } = args;
-  console.table(args);
-  console.log(`셀 (${row}, ${col}) 변경됨: ${newValue}`);
-};
-
-// 모든 수식 재계산
-const calculateAll = () => {
-  if (spreadRef.value) {
-    spreadRef.value.calculateAll();
-  }
-};
-
-// 수식 확인
-const checkFormulas = () => {
-  if (!spreadRef.value) {
-    alert('스프레드시트가 초기화되지 않았습니다.');
-    return;
-  }
-
-  const sheet = spreadRef.value.getActiveSheet();
-
-  let message = "현재 수식 상태:\n\n";
-  sampleData.forEach((item, index) => {
-    if (item.formula) {
-      const formula = sheet.getFormula(index, 1);
-      const value = sheet.getValue(index, 1);
-      message += `${item.label}:\n수식: ${formula}\n결과: ${value}\n\n`;
-    }
-  });
-
-  alert(message);
-};
-// 수식 적용 함수
-const applyFormula = () => {
-  if (!spreadRef.value || !spreadRef.value) return;
+// 선택된 셀의 서식 정보 업데이트 함수
+const updateFormatInfo = () => {
+  if (!spreadRef.value || !currentSelection.value) return;
 
   const sheet = spreadRef.value.getActiveSheet();
   const { row, col } = currentSelection.value;
 
-  try {
-    // 수식에서 = 제거하고 적용
-    const formula = formulaText.value.startsWith('=')
-      ? formulaText.value.substring(1)
-      : formulaText.value;
+  // 스타일 정보 가져오기
+  const style = sheet.getStyle(row, col);
 
-    sheet.setFormula(row, col, formula);
-
-    // 수식 적용 후 계산 실행
-    sheet.recalcAll();
-  } catch (error) {
-    alert('수식 적용 중 오류가 발생했습니다: ' + error.message);
-  }
-};
-
-const formulaText = ref('');
-const currentSelection = ref(null);
-
-// 미리 정의된 함수 삽입
-const insertFunction = (funcName) => {
-  if (!currentSelection.value) {
-    alert('먼저 셀을 선택해주세요.');
-    return;
-  }
-
-  const selection = currentSelection.value;
-  const range = `${getColumnName(selection.col)}${selection.row + 1}:${
-    getColumnName(selection.col + selection.colCount - 1)
-  }${selection.row + selection.rowCount}`;
-
-  formulaText.value = `=${funcName}(${range})`;
-};
-
-// 열 이름 가져오기 (A, B, C, ...)
-const getColumnName = (index) => {
-  let name = '';
-  while (index >= 0) {
-    name = String.fromCharCode(65 + (index % 26)) + name;
-    index = Math.floor(index / 26) - 1;
-  }
-  return name;
-};
-
-// 수식을 클립보드에 복사하는 함수
-const copyFormulaToClipboard = () => {
-  if (!formulaText.value) return;
-
-  navigator.clipboard.writeText(formulaText.value)
-    .then(() => {
-      // 선택적: 복사 성공 표시
-      const originalBorderColor = document.querySelector('.formula-bar').style.borderColor;
-      document.querySelector('.formula-bar').style.borderColor = '#4CAF50';
-
-      setTimeout(() => {
-        document.querySelector('.formula-bar').style.borderColor = originalBorderColor;
-      }, 500);
-    })
-    .catch(err => {
-      console.error('클립보드 복사 실패:', err);
-    });
-};
-
-// 선택된 셀 병합하기
-const mergeCells = () => {
-  if (!spreadRef.value) return;
-
-  const sheet = spreadRef.value.getActiveSheet();
-  const selections = sheet.getSelections();
-
-  if (!selections || selections.length === 0) {
-    alert('병합할 셀을 먼저 선택해주세요.');
-    return;
-  }
-
-  try {
-    // 각 선택 영역에 대해 병합 수행
-    selections.forEach(selection => {
-      const { row, col, rowCount, colCount } = selection;
-
-      // 병합 전에 첫번째 셀의 값 저장 (병합 시 첫 셀 값만 유지됨)
-      const firstCellValue = sheet.getValue(row, col);
-      const firstCellFormula = sheet.getFormula(row, col);
-
-      // 셀 병합
-      sheet.addSpan(row, col, rowCount, colCount);
-
-      // 병합된 셀에 원래 첫 셀의 값이나 수식 적용
-      if (firstCellFormula) {
-        sheet.setFormula(row, col, firstCellFormula);
-      } else if (firstCellValue !== null && firstCellValue !== undefined) {
-        sheet.setValue(row, col, firstCellValue);
-      }
-
-      // 병합된 셀의 텍스트 정렬 가운데로 설정
-      const style = new GC.Spread.Sheets.Style();
-      style.hAlign = GC.Spread.Sheets.HorizontalAlign.center;
-      style.vAlign = GC.Spread.Sheets.VerticalAlign.center;
-      sheet.setStyle(row, col, style);
-    });
-
-    // 변경사항 알림
-    alert('선택한 영역이 병합되었습니다.');
-  } catch (error) {
-    console.error('셀 병합 중 오류 발생:', error);
-    alert('셀 병합 중 오류가 발생했습니다.');
-  }
-};
-
-
-// 셀 병합 해제 기능
-const unmergeCells = () => {
-  if (!spreadRef.value) return;
-
-  const sheet = spreadRef.value.getActiveSheet();
-  const selections = sheet.getSelections();
-
-  if (!selections || selections.length === 0) {
-    alert('병합 해제할 셀을 먼저 선택해주세요.');
-    return;
-  }
-
-  // 선택된 영역의 병합 해제
-  selections.forEach(selection => {
-    // 선택 영역 내의 모든 셀 검사
-    for (let row = selection.row; row < selection.row + selection.rowCount; row++) {
-      for (let col = selection.col; col < selection.col + selection.colCount; col++) {
-        const span = sheet.getSpan(row, col);
-        if (span) {
-          // 병합된 셀 발견 시 병합 해제
-          sheet.removeSpan(span.row, span.col);
-        }
-      }
+  if (style) {
+    // 폰트 패밀리
+    if (style.font && style.font.family) {
+      selectedFont.value = style.font.family;
     }
-  });
-};
 
+    // 폰트 크기
+    if (style.font && style.font.size) {
+      fontSize.value = parseInt(style.font.size);
+    }
+
+    // 굵게
+    isBold.value = style.font && style.font.bold === true;
+
+    // 기울임
+    isItalic.value = style.font && style.font.italic === true;
+
+    // 밑줄
+    isUnderline.value = style.font && style.font.underline === true;
+
+    // 텍스트 색상
+    if (style.foreColor) {
+      textColor.value = style.foreColor;
+    }
+
+    // 배경 색상
+    if (style.backColor) {
+      backgroundColor.value = style.backColor;
+    }
+  } else {
+    // 스타일이 없는 경우 기본값으로 설정
+    selectedFont.value = '맑은 고딕';
+    fontSize.value = 11;
+    isBold.value = false;
+    isItalic.value = false;
+    isUnderline.value = false;
+    textColor.value = '#000000';
+    backgroundColor.value = '#ffffff';
+  }
+};
 
 </script>
 
@@ -588,90 +159,6 @@ const unmergeCells = () => {
   display: flex;
   flex-direction: column;
   height: 100%;
-}
-
-.control-panel {
-  display: flex;
-  margin-bottom: 8px;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 5px;
-}
-
-.formatting-panel {
-  background-color: #f5f5f5;
-  padding: 8px;
-  border-radius: 4px;
-}
-
-.format-group {
-  display: flex;
-  gap: 4px;
-  align-items: center;
-  margin-right: 10px;
-}
-
-.action-button, .format-button {
-  padding: 6px 10px;
-  background-color: #f0f0f0;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 13px;
-}
-
-.action-button:hover, .format-button:hover {
-  background-color: #e0e0e0;
-}
-
-.format-button {
-  min-width: 28px;
-  text-align: center;
-  padding: 5px 8px;
-}
-
-.format-button.active {
-  background-color: #d0d0d0;
-  border-color: #a0a0a0;
-}
-
-.format-control {
-  padding: 5px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-}
-
-.color-picker {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.color-picker label {
-  font-size: 12px;
-}
-
-.color-picker input[type="color"] {
-  width: 24px;
-  height: 24px;
-  border: 1px solid #ccc;
-  padding: 0;
-  cursor: pointer;
-}
-
-.formula-bar {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  margin-left: 10px;
-  flex: 1;
-}
-
-.formula-bar input {
-  flex: 1;
-  padding: 5px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
 }
 
 .relative {
