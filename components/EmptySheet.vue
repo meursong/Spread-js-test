@@ -97,11 +97,16 @@ const checkData = () => {
         const text = sheet.getText(row, col);
         // 셀의 서식 가져오기
         const formatter = sheet.getFormatter(row, col);
+        // 셀의 수식 가져오기
+        const formula = sheet.getFormula(row, col);
+        const formulaInfo = sheet.getFormulaInformation(row, col);
 
         rowData.push({
           value: value,
           displayText: text,
-          formatter: formatter
+          formatter: formatter,
+          formula: formula,
+          formulaInfo: formulaInfo,
         });
       }
       if (rowData.some(cell => cell.value !== null && cell.value !== undefined)) {
@@ -118,7 +123,9 @@ const checkData = () => {
           console.log(`열 ${colIndex + 1}:`, {
             '실제 값': cell.value,
             '표시 텍스트': cell.displayText,
-            '서식': cell.formatter
+            '서식': cell.formatter,
+            '수식': cell.formula,
+            '서식 정보': cell.formulaInfo,
           });
         }
       });
