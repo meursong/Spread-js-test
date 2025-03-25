@@ -19,6 +19,9 @@
     <div class="control-panel">
       <button class="action-button" @click="calculateAll">계산 실행</button>
       <button class="action-button" @click="checkFormulas">수식 확인</button>
+            <!-- 셀 병합 관련 버튼 추가 -->
+      <button class="action-button" @click="mergeCells">선택 영역 병합</button>
+      <button class="action-button" @click="unmergeCells">병합 해제</button>
     </div>
     <div class="relative">
       <gc-spread-sheets
@@ -142,6 +145,7 @@ const initWorkbook = (spread) => {
 // 값 변경 이벤트 핸들러
 const onValueChanged = (args) => {
   const { sheet, row, col, newValue } = args;
+  console.table(args);
   console.log(`셀 (${row}, ${col}) 변경됨: ${newValue}`);
 };
 
@@ -240,6 +244,81 @@ const copyFormulaToClipboard = () => {
       console.error('클립보드 복사 실패:', err);
     });
 };
+
+// 선택된 셀 병합하기
+const mergeCells = () => {
+  if (!spreadRef.value) return;
+
+  const sheet = spreadRef.value.getActiveSheet();
+  const selections = sheet.getSelections();
+
+  if (!selections || selections.length === 0) {
+    alert('병합할 셀을 먼저 선택해주세요.');
+    return;
+  }
+
+  try {
+    // 각 선택 영역에 대해 병합 수행
+    selections.forEach(selection => {
+      const { row, col, rowCount, colCount } = selection;
+
+      // 병합 전에 첫번째 셀의 값 저장 (병합 시 첫 셀 값만 유지됨)
+      const firstCellValue = sheet.getValue(row, col);
+      const firstCellFormula = sheet.getFormula(row, col);
+
+      // 셀 병합
+      sheet.addSpan(row, col, rowCount, colCount);
+
+      // 병합된 셀에 원래 첫 셀의 값이나 수식 적용
+      if (firstCellFormula) {
+        sheet.setFormula(row, col, firstCellFormula);
+      } else if (firstCellValue !== null && firstCellValue !== undefined) {
+        sheet.setValue(row, col, firstCellValue);
+      }
+
+      // 병합된 셀의 텍스트 정렬 가운데로 설정
+      const style = new GC.Spread.Sheets.Style();
+      style.hAlign = GC.Spread.Sheets.HorizontalAlign.center;
+      style.vAlign = GC.Spread.Sheets.VerticalAlign.center;
+      sheet.setStyle(row, col, style);
+    });
+
+    // 변경사항 알림
+    alert('선택한 영역이 병합되었습니다.');
+  } catch (error) {
+    console.error('셀 병합 중 오류 발생:', error);
+    alert('셀 병합 중 오류가 발생했습니다.');
+  }
+};
+
+
+// 셀 병합 해제 기능
+const unmergeCells = () => {
+  if (!spreadRef.value) return;
+
+  const sheet = spreadRef.value.getActiveSheet();
+  const selections = sheet.getSelections();
+
+  if (!selections || selections.length === 0) {
+    alert('병합 해제할 셀을 먼저 선택해주세요.');
+    return;
+  }
+
+  // 선택된 영역의 병합 해제
+  selections.forEach(selection => {
+    // 선택 영역 내의 모든 셀 검사
+    for (let row = selection.row; row < selection.row + selection.rowCount; row++) {
+      for (let col = selection.col; col < selection.col + selection.colCount; col++) {
+        const span = sheet.getSpan(row, col);
+        if (span) {
+          // 병합된 셀 발견 시 병합 해제
+          sheet.removeSpan(span.row, span.col);
+        }
+      }
+    }
+  });
+};
+
 
 </script>
 
