@@ -24,6 +24,9 @@
         <NuxtLink to="/spreadsheet/formulas" class="nav-item">
           <span class="nav-text">수식</span>
         </NuxtLink>
+        <NuxtLink to="/spreadsheet/chart-graph" class="nav-item">
+          <span class="nav-text">차트 / 그래프</span>
+        </NuxtLink>
       </div>
     </nav>
 
