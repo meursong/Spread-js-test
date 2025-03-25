@@ -9,6 +9,9 @@
         <NuxtLink to="/" class="nav-item">
           <span class="nav-text">홈</span>
         </NuxtLink>
+        <NuxtLink to="/spreadsheet/empty" class="nav-item">
+          <span class="nav-text">빈 엑셀 시트</span>
+        </NuxtLink>
         <NuxtLink to="/spreadsheet/excel-test" class="nav-item">
           <span class="nav-text">엑셀 테스트</span>
         </NuxtLink>
