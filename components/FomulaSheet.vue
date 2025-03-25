@@ -17,9 +17,6 @@
       </div>
     </div>
     <div class="control-panel">
-      <button class="action-button" @click="calculateAll">계산 실행</button>
-      <button class="action-button" @click="checkFormulas">수식 확인</button>
-            <!-- 셀 병합 관련 버튼 추가 -->
       <button class="action-button" @click="mergeCells">선택 영역 병합</button>
       <button class="action-button" @click="unmergeCells">병합 해제</button>
     </div>
