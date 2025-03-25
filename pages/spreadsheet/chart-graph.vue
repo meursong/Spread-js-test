@@ -4,7 +4,7 @@
     <ClientOnly>
       <Suspense>
         <template #default>
-          <FomulaSheet @sheet-loaded="onSheetLoaded" />
+          <ChartAndGraphSheet @sheet-loaded="onSheetLoaded" />
         </template>
         <template #fallback>
           <LoadingSpinner>
