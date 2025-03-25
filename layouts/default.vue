@@ -3,17 +3,17 @@
     <!-- 사이드 네비게이션 -->
     <nav class="navigation">
       <div class="nav-header">
-        <h1 class="nav-title">SpreadJS 테스트</h1>
+        <h1 class="nav-title">엑셀관리</h1>
       </div>
       <div class="nav-links">
         <NuxtLink to="/" class="nav-item">
           <span class="nav-text">홈</span>
         </NuxtLink>
         <NuxtLink to="/spreadsheet/empty" class="nav-item">
-          <span class="nav-text">빈 엑셀 시트</span>
+          <span class="nav-text">빈 엑셀</span>
         </NuxtLink>
         <NuxtLink to="/spreadsheet/excel-test" class="nav-item">
-          <span class="nav-text">엑셀 테스트</span>
+          <span class="nav-text">열기 / 내보내기</span>
         </NuxtLink>
         <NuxtLink to="/spreadsheet/data-types" class="nav-item">
           <span class="nav-text">데이터 타입</span>

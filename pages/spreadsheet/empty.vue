@@ -1,6 +1,6 @@
 <template>
   <div>
-    <h1 class="text-2xl font-bold mb-6">빈 엑셀 시트 테스트</h1>
+    <h1 class="text-2xl font-bold mb-6">빈 엑셀 시트</h1>
     <ClientOnly>
       <Suspense>
         <template #default>

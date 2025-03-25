@@ -1,6 +1,6 @@
 <template>
   <div>
-    <h1 class="text-2xl font-bold mb-6">엑셀 가져오기/내보내기 테스트</h1>
+    <h1 class="text-2xl font-bold mb-6">엑셀 파일 가져오기/내보내기</h1>
     <ClientOnly>
       <Suspense>
         <template #default>
