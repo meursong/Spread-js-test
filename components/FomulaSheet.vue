@@ -20,6 +20,66 @@
       <button class="action-button" @click="mergeCells">선택 영역 병합</button>
       <button class="action-button" @click="unmergeCells">병합 해제</button>
     </div>
+
+    <!-- 텍스트 서식 패널 추가 -->
+    <div class="control-panel formatting-panel">
+      <div class="format-group">
+        <select class="format-control" v-model="selectedFont" @change="applyFont">
+          <option value="맑은 고딕">맑은 고딕</option>
+          <option value="굴림">굴림</option>
+          <option value="돋움">돋움</option>
+          <option value="바탕">바탕</option>
+          <option value="Arial">Arial</option>
+          <option value="Verdana">Verdana</option>
+          <option value="Times New Roman">Times New Roman</option>
+        </select>
+
+        <select class="format-control" v-model="fontSize" @change="applyFontSize">
+          <option v-for="size in [8, 9, 10, 11, 12, 14, 16, 18, 20, 24, 28, 32, 36]" :key="size" :value="size">
+            {{ size }}pt
+          </option>
+        </select>
+      </div>
+
+      <div class="format-group">
+        <button class="format-button" :class="{active: isBold}" @click="toggleBold" title="굵게">
+          <strong>B</strong>
+        </button>
+        <button class="format-button" :class="{active: isItalic}" @click="toggleItalic" title="기울임">
+          <em>I</em>
+        </button>
+        <button class="format-button" :class="{active: isUnderline}" @click="toggleUnderline" title="밑줄">
+          <u>U</u>
+        </button>
+      </div>
+
+      <div class="format-group">
+        <!-- 텍스트 정렬 버튼 -->
+        <button class="format-button" @click="applyAlignment('left')" title="왼쪽 정렬">
+          ◀
+        </button>
+        <button class="format-button" @click="applyAlignment('center')" title="가운데 정렬">
+          ■
+        </button>
+        <button class="format-button" @click="applyAlignment('right')" title="오른쪽 정렬">
+          ▶
+        </button>
+      </div>
+
+      <!-- 색상 선택 도구 -->
+      <div class="format-group">
+        <div class="color-picker">
+          <label>글자색:</label>
+          <input type="color" v-model="textColor" @change="applyTextColor" />
+        </div>
+
+        <div class="color-picker">
+          <label>배경색:</label>
+          <input type="color" v-model="backgroundColor" @change="applyBackgroundColor" />
+        </div>
+      </div>
+    </div>
+
     <div class="relative">
       <gc-spread-sheets
           class="spread-host"
@@ -62,6 +122,15 @@ const sampleData = [
   { label: '문자결합 수식', formula: '=CONCATENATE("계산값: ",B1)' }
 ];
 
+// 서식 설정을 위한 상태 추가
+const selectedFont = ref('맑은 고딕');
+const fontSize = ref(11);
+const isBold = ref(false);
+const isItalic = ref(false);
+const isUnderline = ref(false);
+const textColor = ref('#000000');
+const backgroundColor = ref('#ffffff');
+
 // 스타일 설정 함수
 const setStyles = (sheet) => {
   sampleData.forEach((item, index) => {
@@ -90,6 +159,197 @@ const setStyles = (sheet) => {
   sheet.setColumnWidth(1, 250);
 };
 
+// 선택된 셀의 서식 정보 업데이트
+const updateFormatInfo = () => {
+  if (!spreadRef.value || !currentSelection.value) return;
+
+  const sheet = spreadRef.value.getActiveSheet();
+  const { row, col } = currentSelection.value;
+  const style = sheet.getStyle(row, col);
+
+  if (style) {
+    // 글꼴 정보 파싱
+    if (style.font) {
+      const fontInfo = style.font.split(' ');
+
+      // 볼드 체크
+      isBold.value = style.font.includes('bold');
+
+      // 이탤릭 체크
+      isItalic.value = style.font.includes('italic');
+
+      // 글꼴 크기 (예: '11pt 맑은 고딕' 형식에서 추출)
+      const sizeMatch = style.font.match(/(\d+)pt/);
+      if (sizeMatch) {
+        fontSize.value = parseInt(sizeMatch[1]);
+      }
+
+      // 글꼴 이름
+      const fontFamilyParts = style.font.split('pt ');
+      if (fontFamilyParts.length > 1) {
+        selectedFont.value = fontFamilyParts[1].replace(/bold|italic|\s+/g, ' ').trim();
+      }
+    }
+
+    // 색상 정보
+    if (style.foreColor) {
+      textColor.value = style.foreColor;
+    }
+
+    if (style.backColor) {
+      backgroundColor.value = style.backColor;
+    }
+  }
+};
+
+// 선택된 셀에 서식 적용 함수
+const applyStyleToSelection = (styleUpdater) => {
+  if (!spreadRef.value || !currentSelection.value) return;
+
+  const sheet = spreadRef.value.getActiveSheet();
+  const { row, col, rowCount, colCount } = currentSelection.value;
+
+  // 선택된 영역의 모든 셀에 스타일 적용
+  for (let r = row; r < row + rowCount; r++) {
+    for (let c = col; c < col + colCount; c++) {
+      // 기존 스타일 가져오기
+      let style = sheet.getStyle(r, c) || new GC.Spread.Sheets.Style();
+
+      // 스타일 업데이트
+      style = styleUpdater(style);
+
+      // 업데이트된 스타일 적용
+      sheet.setStyle(r, c, style);
+    }
+  }
+};
+
+// 글꼴 적용
+const applyFont = () => {
+  applyStyleToSelection((style) => {
+    // 기존 글꼴 정보 유지하면서 글꼴만 변경
+    const fontParts = (style.font || '11pt 맑은 고딕').split('pt ');
+    const fontWeight = isBold.value ? 'bold' : '';
+    const fontStyle = isItalic.value ? 'italic' : '';
+    const fontWeightAndStyle = (fontWeight + ' ' + fontStyle).trim();
+
+    style.font = `${fontSize.value}pt ${selectedFont.value}`;
+    if (fontWeightAndStyle) {
+      style.font = `${fontWeightAndStyle} ${style.font}`;
+    }
+
+    return style;
+  });
+};
+
+// 글꼴 크기 적용
+const applyFontSize = () => {
+  applyStyleToSelection((style) => {
+    // 기존 글꼴 정보 유지하면서 크기만 변경
+    const fontParts = (style.font || '11pt 맑은 고딕').split('pt ');
+    const fontWeight = isBold.value ? 'bold' : '';
+    const fontStyle = isItalic.value ? 'italic' : '';
+    const fontWeightAndStyle = (fontWeight + ' ' + fontStyle).trim();
+
+    style.font = `${fontSize.value}pt ${selectedFont.value}`;
+    if (fontWeightAndStyle) {
+      style.font = `${fontWeightAndStyle} ${style.font}`;
+    }
+
+    return style;
+  });
+};
+
+// 굵게 설정
+const toggleBold = () => {
+  isBold.value = !isBold.value;
+
+  applyStyleToSelection((style) => {
+    // 기존 글꼴 정보 유지하면서 굵기만 변경
+    const fontParts = (style.font || '11pt 맑은 고딕').split('pt ');
+    const fontStyle = isItalic.value ? 'italic' : '';
+    const fontWeightAndStyle = ((isBold.value ? 'bold' : '') + ' ' + fontStyle).trim();
+
+    style.font = `${fontSize.value}pt ${selectedFont.value}`;
+    if (fontWeightAndStyle) {
+      style.font = `${fontWeightAndStyle} ${style.font}`;
+    }
+
+    return style;
+  });
+};
+
+// 기울임꼴 설정
+const toggleItalic = () => {
+  isItalic.value = !isItalic.value;
+
+  applyStyleToSelection((style) => {
+    // 기존 글꼴 정보 유지하면서 기울임만 변경
+    const fontParts = (style.font || '11pt 맑은 고딕').split('pt ');
+    const fontWeight = isBold.value ? 'bold' : '';
+    const fontWeightAndStyle = (fontWeight + ' ' + (isItalic.value ? 'italic' : '')).trim();
+
+    style.font = `${fontSize.value}pt ${selectedFont.value}`;
+    if (fontWeightAndStyle) {
+      style.font = `${fontWeightAndStyle} ${style.font}`;
+    }
+
+    return style;
+  });
+};
+
+// 밑줄 설정
+const toggleUnderline = () => {
+  isUnderline.value = !isUnderline.value;
+
+  applyStyleToSelection((style) => {
+    style.textDecoration = isUnderline.value
+      ? GC.Spread.Sheets.TextDecorationType.underline
+      : GC.Spread.Sheets.TextDecorationType.none;
+    return style;
+  });
+};
+
+// 텍스트 정렬 적용
+const applyAlignment = (align) => {
+  let hAlign;
+
+  switch (align) {
+    case 'left':
+      hAlign = GC.Spread.Sheets.HorizontalAlign.left;
+      break;
+    case 'center':
+      hAlign = GC.Spread.Sheets.HorizontalAlign.center;
+      break;
+    case 'right':
+      hAlign = GC.Spread.Sheets.HorizontalAlign.right;
+      break;
+    default:
+      hAlign = GC.Spread.Sheets.HorizontalAlign.general;
+  }
+
+  applyStyleToSelection((style) => {
+    style.hAlign = hAlign;
+    return style;
+  });
+};
+
+// 글자색 적용
+const applyTextColor = () => {
+  applyStyleToSelection((style) => {
+    style.foreColor = textColor.value;
+    return style;
+  });
+};
+
+// 배경색 적용
+const applyBackgroundColor = () => {
+  applyStyleToSelection((style) => {
+    style.backColor = backgroundColor.value;
+    return style;
+  });
+};
+
 // 선택 영역 변경 이벤트 핸들러
 const onSelectionChanged = (e) => {
   const sheet = spreadRef.value.getActiveSheet();
@@ -103,7 +363,11 @@ const onSelectionChanged = (e) => {
       currentSelection.value.row,
       currentSelection.value.col
     );
+
     formulaText.value = formula ? '=' + formula : '';
+
+    // 서식 정보도 업데이트
+    updateFormatInfo();
   }
 };
 
@@ -323,150 +587,104 @@ const unmergeCells = () => {
 .container {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  padding: 20px;
-  background-color: #f8f9fa;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  height: 100%;
 }
 
 .control-panel {
   display: flex;
-  gap: 12px;
+  margin-bottom: 8px;
   flex-wrap: wrap;
   align-items: center;
-  padding: 12px;
-  background-color: white;
-  border-radius: 6px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  gap: 5px;
 }
 
-.action-button {
-  padding: 8px 16px;
-  font-size: 14px;
-  font-weight: 500;
-  color: #ffffff;
-  background: linear-gradient(135deg, #4472C4 0%, #2c5aa0 100%);
-  border: none;
+.formatting-panel {
+  background-color: #f5f5f5;
+  padding: 8px;
+  border-radius: 4px;
+}
+
+.format-group {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  margin-right: 10px;
+}
+
+.action-button, .format-button {
+  padding: 6px 10px;
+  background-color: #f0f0f0;
+  border: 1px solid #ccc;
   border-radius: 4px;
   cursor: pointer;
-  transition: all 0.2s ease;
-  min-width: 100px;
-  height: 36px;
+  font-size: 13px;
+}
+
+.action-button:hover, .format-button:hover {
+  background-color: #e0e0e0;
+}
+
+.format-button {
+  min-width: 28px;
+  text-align: center;
+  padding: 5px 8px;
+}
+
+.format-button.active {
+  background-color: #d0d0d0;
+  border-color: #a0a0a0;
+}
+
+.format-control {
+  padding: 5px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.color-picker {
   display: flex;
   align-items: center;
-  justify-content: center;
+  gap: 4px;
 }
 
-.action-button:hover {
-  background: linear-gradient(135deg, #2c5aa0 0%, #1e3c6a 100%);
-  transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+.color-picker label {
+  font-size: 12px;
 }
 
-.action-button:active {
-  transform: translateY(0);
+.color-picker input[type="color"] {
+  width: 24px;
+  height: 24px;
+  border: 1px solid #ccc;
+  padding: 0;
+  cursor: pointer;
 }
 
 .formula-bar {
   display: flex;
   align-items: center;
-  gap: 8px;
-  flex-grow: 1;
-  background-color: #ffffff;
-  border: 1px solid #e0e0e0;
-  border-radius: 4px;
-  padding: 4px 12px;
-  height: 36px;
-  transition: all 0.2s ease;
-}
-
-.formula-bar:focus-within {
-  border-color: #4472C4;
-  box-shadow: 0 0 0 2px rgba(68, 114, 196, 0.2);
-}
-
-.formula-bar span {
-  color: #4472C4;
-  font-weight: 600;
-  font-size: 14px;
-  padding-right: 8px;
-  border-right: 1px solid #e0e0e0;
+  gap: 5px;
+  margin-left: 10px;
+  flex: 1;
 }
 
 .formula-bar input {
-  flex-grow: 1;
-  border: none;
-  outline: none;
-  font-size: 14px;
-  color: #333333;
-  background: transparent;
-  padding: 0 8px;
-}
-
-.formula-bar input::placeholder {
-  color: #999999;
+  flex: 1;
+  padding: 5px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
 }
 
 .relative {
   position: relative;
-  height: 600px; /* 스프레드시트 높이 조정 */
-  border-radius: 6px;
-  overflow: hidden;
-  border: 1px solid #e0e0e0;
+  flex: 1;
+  min-height: 400px;
 }
 
 .spread-host {
-  width: 100%;
-  height: 100%;
-}
-
-/* 반응형 디자인 */
-@media (max-width: 768px) {
-  .control-panel {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .formula-bar {
-    width: 100%;
-  }
-
-  .action-button {
-    width: 100%;
-  }
-}
-
-/* 다크 모드 지원 */
-@media (prefers-color-scheme: dark) {
-  .container {
-    background-color: #1e1e1e;
-  }
-
-  .control-panel {
-    background-color: #2d2d2d;
-  }
-
-  .formula-bar {
-    background-color: #2d2d2d;
-    border-color: #404040;
-  }
-
-  .formula-bar span {
-    color: #7aa2f7;
-    border-right-color: #404040;
-  }
-
-  .formula-bar input {
-    color: #ffffff;
-  }
-
-  .formula-bar input::placeholder {
-    color: #666666;
-  }
-
-  .relative {
-    border-color: #404040;
-  }
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
 }
 </style>
