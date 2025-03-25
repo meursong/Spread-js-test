@@ -173,9 +173,9 @@ const checkFormulas = () => {
 };
 // 수식 적용 함수
 const applyFormula = () => {
-  if (!spreadInstance.value || !currentSelection.value) return;
+  if (!spreadRef.value || !spreadRef.value) return;
 
-  const sheet = spreadInstance.value.getActiveSheet();
+  const sheet = spreadRef.value.getActiveSheet();
   const { row, col } = currentSelection.value;
 
   try {
@@ -193,7 +193,6 @@ const applyFormula = () => {
   }
 };
 
-const spreadInstance = ref(null);
 const formulaText = ref('');
 const currentSelection = ref(null);
 
