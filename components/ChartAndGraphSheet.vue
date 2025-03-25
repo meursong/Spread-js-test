@@ -2,20 +2,35 @@
   <div class="container">
     <!-- 컴포넌트화된 툴바 사용 -->
     <RibonMenu
-      v-model:formulaText="formulaText"
-      v-model:selectedFont="selectedFont"
-      v-model:fontSize="fontSize"
-      v-model:textColor="textColor"
-      v-model:backgroundColor="backgroundColor"
-      v-model:isBold="isBold"
-      v-model:isItalic="isItalic"
-      v-model:isUnderline="isUnderline"
-      :spread="spreadRef"
-      :currentSelection="currentSelection"
-      @formula-applied="onFormulaApplied"
-      @style-updated="onStyleUpdated"
+        v-model:formulaText="formulaText"
+        v-model:selectedFont="selectedFont"
+        v-model:fontSize="fontSize"
+        v-model:textColor="textColor"
+        v-model:backgroundColor="backgroundColor"
+        v-model:isBold="isBold"
+        v-model:isItalic="isItalic"
+        v-model:isUnderline="isUnderline"
+        :spread="spreadRef"
+        :currentSelection="currentSelection"
+        @formula-applied="onFormulaApplied"
+        @style-updated="onStyleUpdated"
     />
 
+    <!-- 차트 컨트롤 추가 -->
+    <div class="chart-controls">
+      <div class="control-group">
+        <button class="chart-btn" @click="addColumnChart">막대 차트</button>
+        <button class="chart-btn" @click="addLineChart">선 차트</button>
+        <button class="chart-btn" @click="addPieChart">파이 차트</button>
+        <button class="chart-btn" @click="addAreaChart">영역 차트</button>
+        <button class="chart-btn" @click="addScatterChart">분산형 차트</button>
+      </div>
+      <div class="control-group">
+        <button class="chart-btn" @click="addSparkline('line')">라인 스파크라인</button>
+        <button class="chart-btn" @click="addSparkline('column')">컬럼 스파크라인</button>
+        <button class="chart-btn" @click="addSparkline('winloss')">승패 스파크라인</button>
+      </div>
+    </div>
 
     <div class="relative">
       <gc-spread-sheets
@@ -29,11 +44,15 @@
 </template>
 
 <script setup>
-import { ref, inject } from 'vue';
+import { ref, inject, onMounted } from 'vue';
 import '@mescius/spread-sheets/styles/gc.spread.sheets.excel2016colorful.css';
 import { GcSpreadSheets } from '@mescius/spread-sheets-vue';
 import * as GC from "@mescius/spread-sheets";
 import '@mescius/spread-sheets-resources-ko';
+
+// 차트 라이브러리 임포트
+import '@mescius/spread-sheets-charts';
+import '@mescius/spread-sheets-shapes';
 
 // loading composable 주입
 const { startLoading, stopLoading } = inject('loading');
@@ -55,6 +74,48 @@ const backgroundColor = ref('#ffffff');
 const formulaText = ref('');
 const currentSelection = ref(null);
 
+// 샘플 데이터 생성 함수
+const createSampleData = (sheet) => {
+  // 헤더 설정
+  sheet.setValue(0, 0, "분기");
+  sheet.setValue(0, 1, "제품 A");
+  sheet.setValue(0, 2, "제품 B");
+  sheet.setValue(0, 3, "제품 C");
+
+  // 데이터 설정
+  sheet.setValue(1, 0, "1분기");
+  sheet.setValue(1, 1, 250);
+  sheet.setValue(1, 2, 180);
+  sheet.setValue(1, 3, 120);
+
+  sheet.setValue(2, 0, "2분기");
+  sheet.setValue(2, 1, 300);
+  sheet.setValue(2, 2, 200);
+  sheet.setValue(2, 3, 140);
+
+  sheet.setValue(3, 0, "3분기");
+  sheet.setValue(3, 1, 280);
+  sheet.setValue(3, 2, 250);
+  sheet.setValue(3, 3, 160);
+
+  sheet.setValue(4, 0, "4분기");
+  sheet.setValue(4, 1, 350);
+  sheet.setValue(4, 2, 280);
+  sheet.setValue(4, 3, 200);
+
+  // 헤더 스타일 적용
+  const headerStyle = new GC.Spread.Sheets.Style();
+  headerStyle.font = "맑은 고딕 11pt bold";
+  headerStyle.hAlign = GC.Spread.Sheets.HorizontalAlign.center;
+  headerStyle.backColor = "#EEEEEE";
+
+  sheet.setRowHeight(0, 25);
+  for (let col = 0; col < 4; col++) {
+    sheet.setStyle(0, col, headerStyle);
+    sheet.setColumnWidth(col, 100);
+  }
+}
+
 // 워크북 초기화
 const initWorkbook = (spread) => {
   startLoading();
@@ -63,6 +124,13 @@ const initWorkbook = (spread) => {
     spreadRef.value = spread;
 
     const sheet = spread.getActiveSheet();
+
+    // 샘플 데이터 생성
+    createSampleData(sheet);
+
+    // 기본 차트 추가 (예시)
+    addColumnChart();
+
   } catch (error) {
     console.error('스프레드시트 초기화 중 오류:', error);
   } finally {
@@ -90,8 +158,8 @@ const onSelectionChanged = (e) => {
 
     // 선택된 셀의 수식 가져오기
     const formula = sheet.getFormula(
-      currentSelection.value.row,
-      currentSelection.value.col
+        currentSelection.value.row,
+        currentSelection.value.col
     );
 
     formulaText.value = formula ? '=' + formula : '';
@@ -152,6 +220,225 @@ const updateFormatInfo = () => {
   }
 };
 
+// 차트 추가 함수들
+const addColumnChart = () => {
+  if (!spreadRef.value) return;
+
+  const sheet = spreadRef.value.getActiveSheet();
+  const chartCount = sheet.charts.all().length;
+
+  // 데이터 범위 설정
+  const dataRange = "Sheet1!A1:D5"; // 또는 적절한 범위 문자열
+
+  const categoriesRange = new GC.Spread.Sheets.Range(1, 0, 4, 1);
+
+  // 차트 생성
+  const chart = sheet.charts.add(`차트_${chartCount + 1}`,
+      GC.Spread.Sheets.Charts.ChartType.columnClustered,
+      200, 20, 400, 300, // x, y, width, height
+      dataRange, categoriesRange);
+
+  // 차트 제목 설정
+  chart.title({
+    text: "분기별 제품 판매량 (막대 차트)",
+    fontSize: 14,
+    fontFamily: "맑은 고딕"
+  });
+
+  // 범례 설정
+  chart.legend({
+    position: "bottom"
+  });
+
+  console.log('막대 차트가 추가되었습니다.');
+};
+
+const addLineChart = () => {
+  if (!spreadRef.value) return;
+
+  const sheet = spreadRef.value.getActiveSheet();
+  const chartCount = sheet.charts.all().length;
+
+  // 데이터 범위 설정
+  const dataRange = new GC.Spread.Sheets.Range(1, 1, 4, 3);
+  const categoriesRange = new GC.Spread.Sheets.Range(1, 0, 4, 1);
+
+  // 차트 생성
+  const chart = sheet.charts.add(`차트_${chartCount + 1}`,
+      GC.Spread.Sheets.Charts.ChartType.line,
+      200, 350, 400, 300, // x, y, width, height
+      dataRange, categoriesRange);
+
+  // 차트 제목 설정
+  chart.title({
+    text: "분기별 제품 판매량 (선 차트)",
+    fontSize: 14,
+    fontFamily: "맑은 고딕"
+  });
+
+  // 범례 설정
+  chart.legend({
+    position: "bottom"
+  });
+
+  console.log('선 차트가 추가되었습니다.');
+};
+
+const addPieChart = () => {
+  if (!spreadRef.value) return;
+
+  const sheet = spreadRef.value.getActiveSheet();
+  const chartCount = sheet.charts.all().length;
+
+  // 데이터 범위 설정 (파이차트는 한 시리즈만 가능)
+  const dataRange = new GC.Spread.Sheets.Range(1, 1, 4, 1);
+  const categoriesRange = new GC.Spread.Sheets.Range(1, 0, 4, 1);
+
+  // 차트 생성
+  const chart = sheet.charts.add(`차트_${chartCount + 1}`,
+      GC.Spread.Sheets.Charts.ChartType.pie,
+      650, 20, 300, 300, // x, y, width, height
+      dataRange, categoriesRange);
+
+  // 차트 제목 설정
+  chart.title({
+    text: "제품 A 분기별 판매량 (파이 차트)",
+    fontSize: 14,
+    fontFamily: "맑은 고딕"
+  });
+
+  // 범례 설정
+  chart.legend({
+    position: "right"
+  });
+
+  console.log('파이 차트가 추가되었습니다.');
+};
+
+const addAreaChart = () => {
+  if (!spreadRef.value) return;
+
+  const sheet = spreadRef.value.getActiveSheet();
+  const chartCount = sheet.charts.all().length;
+
+  // 데이터 범위 설정
+  const dataRange = new GC.Spread.Sheets.Range(1, 1, 4, 3);
+  const categoriesRange = new GC.Spread.Sheets.Range(1, 0, 4, 1);
+
+  // 차트 생성
+  const chart = sheet.charts.add(`차트_${chartCount + 1}`,
+      GC.Spread.Sheets.Charts.ChartType.area,
+      650, 350, 400, 300, // x, y, width, height
+      dataRange, categoriesRange);
+
+  // 차트 제목 설정
+  chart.title({
+    text: "분기별 제품 판매량 (영역 차트)",
+    fontSize: 14,
+    fontFamily: "맑은 고딕"
+  });
+
+  // 범례 설정
+  chart.legend({
+    position: "bottom"
+  });
+
+  console.log('영역 차트가 추가되었습니다.');
+};
+
+const addScatterChart = () => {
+  if (!spreadRef.value) return;
+
+  const sheet = spreadRef.value.getActiveSheet();
+  const chartCount = sheet.charts.all().length;
+
+  // 데이터 범위 설정
+  const dataRange = new GC.Spread.Sheets.Range(1, 1, 4, 2);
+
+  // 차트 생성 (분산형은 카테고리가 필요없음)
+  const chart = sheet.charts.add(`차트_${chartCount + 1}`,
+      GC.Spread.Sheets.Charts.ChartType.scatter,
+      200, 670, 400, 300, // x, y, width, height
+      dataRange);
+
+  // 차트 제목 설정
+  chart.title({
+    text: "제품 A와 제품 B의 상관관계 (분산형)",
+    fontSize: 14,
+    fontFamily: "맑은 고딕"
+  });
+
+  // 범례 설정
+  chart.legend({
+    position: "bottom"
+  });
+
+  console.log('분산형 차트가 추가되었습니다.');
+};
+
+// 스파크라인 추가 함수
+const addSparkline = (type) => {
+  if (!spreadRef.value) return;
+
+  const sheet = spreadRef.value.getActiveSheet();
+
+  // 스파크라인 데이터 추가
+  sheet.setValue(6, 0, "스파크라인:");
+
+  // 스파크라인 자료
+  sheet.setValue(8, 0, "제품 A");
+  sheet.setValue(9, 0, "제품 B");
+  sheet.setValue(10, 0, "제품 C");
+
+  // 스파크라인 생성
+  const sparklineType = GC.Spread.Sheets.Sparklines.SparklineType[type];
+
+  // 제품 A 스파크라인
+  sheet.setSparkline(8, 1, {
+    dataRange: "B2:B5", // 1분기~4분기 제품 A 데이터
+    sparklineType: sparklineType,
+    setting: {
+      showMarkers: true,
+      displayXAxis: true,
+      lineWeight: 2
+    }
+  });
+
+  // 제품 B 스파크라인
+  sheet.setSparkline(9, 1, {
+    dataRange: "C2:C5", // 1분기~4분기 제품 B 데이터
+    sparklineType: sparklineType,
+    setting: {
+      showMarkers: true,
+      displayXAxis: true,
+      lineWeight: 2
+    }
+  });
+
+  // 제품 C 스파크라인
+  sheet.setSparkline(10, 1, {
+    dataRange: "D2:D5", // 1분기~4분기 제품 C 데이터
+    sparklineType: sparklineType,
+    setting: {
+      showMarkers: true,
+      displayXAxis: true,
+      lineWeight: 2
+    }
+  });
+
+  // 스타일 적용
+  const headerStyle = new GC.Spread.Sheets.Style();
+  headerStyle.font = new GC.Spread.Sheets.Font("맑은 고딕", 11, "bold");
+
+  sheet.setStyle(6, 0, headerStyle);
+  sheet.setStyle(8, 0, headerStyle);
+  sheet.setStyle(9, 0, headerStyle);
+  sheet.setStyle(10, 0, headerStyle);
+  sheet.setColumnWidth(1, 200);
+
+  console.log(`${type} 스파크라인이 추가되었습니다.`);
+};
+
 </script>
 
 <style scoped>
@@ -159,6 +446,34 @@ const updateFormatInfo = () => {
   display: flex;
   flex-direction: column;
   height: 100%;
+}
+
+.chart-controls {
+  display: flex;
+  padding: 8px;
+  background-color: #f5f5f5;
+  border-bottom: 1px solid #ddd;
+  gap: 10px;
+}
+
+.control-group {
+  display: flex;
+  gap: 4px;
+}
+
+.chart-btn {
+  padding: 6px 12px;
+  background-color: #4285f4;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.chart-btn:hover {
+  background-color: #3275e4;
 }
 
 .relative {
