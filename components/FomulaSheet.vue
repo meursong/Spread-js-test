@@ -1,6 +1,21 @@
 <template>
   <div class="container">
     <div class="control-panel">
+      <button class="action-button" @click="insertFunction('SUM')">=SUM()</button>
+      <button class="action-button" @click="insertFunction('COUNT')">=COUNT()</button>
+      <button class="action-button" @click="insertFunction('MAX')">=MAX()</button>
+      <button class="action-button" @click="insertFunction('MIN')">=MIN()</button>
+      <!-- 수식 입력 바 -->
+      <div class="formula-bar">
+        <span>fx</span>
+        <input
+          v-model="formulaText"
+          @keyup.enter="applyFormula"
+          placeholder="수식을 입력하세요"
+        />
+      </div>
+    </div>
+    <div class="control-panel">
       <button class="action-button" @click="calculateAll">계산 실행</button>
       <button class="action-button" @click="checkFormulas">수식 확인</button>
     </div>
@@ -9,6 +24,7 @@
           class="spread-host"
           @workbookInitialized="initWorkbook"
           @valueChanged="onValueChanged"
+          @selectionChanged="onSelectionChanged"
       >
       </gc-spread-sheets>
     </div>
@@ -71,6 +87,23 @@ const setStyles = (sheet) => {
   // 컬럼 너비 설정
   sheet.setColumnWidth(0, 150);
   sheet.setColumnWidth(1, 250);
+};
+
+// 선택 영역 변경 이벤트 핸들러
+const onSelectionChanged = (e) => {
+  const sheet = spreadRef.value.getActiveSheet();
+  const selections = sheet.getSelections();
+
+  if (selections && selections.length > 0) {
+    currentSelection.value = selections[0];
+
+    // 선택된 셀의 수식 가져오기
+    const formula = sheet.getFormula(
+      currentSelection.value.row,
+      currentSelection.value.col
+    );
+    formulaText.value = formula ? '=' + formula : '';
+  }
 };
 
 // 워크북 초기화
@@ -138,38 +171,207 @@ const checkFormulas = () => {
 
   alert(message);
 };
+// 수식 적용 함수
+const applyFormula = () => {
+  if (!spreadInstance.value || !currentSelection.value) return;
+
+  const sheet = spreadInstance.value.getActiveSheet();
+  const { row, col } = currentSelection.value;
+
+  try {
+    // 수식에서 = 제거하고 적용
+    const formula = formulaText.value.startsWith('=')
+      ? formulaText.value.substring(1)
+      : formulaText.value;
+
+    sheet.setFormula(row, col, formula);
+
+    // 수식 적용 후 계산 실행
+    sheet.recalcAll();
+  } catch (error) {
+    alert('수식 적용 중 오류가 발생했습니다: ' + error.message);
+  }
+};
+
+const spreadInstance = ref(null);
+const formulaText = ref('');
+const currentSelection = ref(null);
+
+// 미리 정의된 함수 삽입
+const insertFunction = (funcName) => {
+  if (!currentSelection.value) {
+    alert('먼저 셀을 선택해주세요.');
+    return;
+  }
+
+  const selection = currentSelection.value;
+  const range = `${getColumnName(selection.col)}${selection.row + 1}:${
+    getColumnName(selection.col + selection.colCount - 1)
+  }${selection.row + selection.rowCount}`;
+
+  formulaText.value = `=${funcName}(${range})`;
+};
+
+// 열 이름 가져오기 (A, B, C, ...)
+const getColumnName = (index) => {
+  let name = '';
+  while (index >= 0) {
+    name = String.fromCharCode(65 + (index % 26)) + name;
+    index = Math.floor(index / 26) - 1;
+  }
+  return name;
+};
 
 </script>
 
 <style scoped>
 .container {
-  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .control-panel {
-  margin-bottom: 1rem;
   display: flex;
-  gap: 1rem;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+  padding: 12px;
+  background-color: white;
+  border-radius: 6px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
 }
 
 .action-button {
-  padding: 0.5rem 1rem;
-  background-color: #4472C4;
-  color: white;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #ffffff;
+  background: linear-gradient(135deg, #4472C4 0%, #2c5aa0 100%);
   border: none;
   border-radius: 4px;
   cursor: pointer;
-  font-weight: bold;
+  transition: all 0.2s ease;
+  min-width: 100px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .action-button:hover {
-  background-color: #365899;
+  background: linear-gradient(135deg, #2c5aa0 0%, #1e3c6a 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.action-button:active {
+  transform: translateY(0);
+}
+
+.formula-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-grow: 1;
+  background-color: #ffffff;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  padding: 4px 12px;
+  height: 36px;
+  transition: all 0.2s ease;
+}
+
+.formula-bar:focus-within {
+  border-color: #4472C4;
+  box-shadow: 0 0 0 2px rgba(68, 114, 196, 0.2);
+}
+
+.formula-bar span {
+  color: #4472C4;
+  font-weight: 600;
+  font-size: 14px;
+  padding-right: 8px;
+  border-right: 1px solid #e0e0e0;
+}
+
+.formula-bar input {
+  flex-grow: 1;
+  border: none;
+  outline: none;
+  font-size: 14px;
+  color: #333333;
+  background: transparent;
+  padding: 0 8px;
+}
+
+.formula-bar input::placeholder {
+  color: #999999;
+}
+
+.relative {
+  position: relative;
+  height: 600px; /* 스프레드시트 높이 조정 */
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid #e0e0e0;
 }
 
 .spread-host {
-  width: 90vw;
-  height: 80vh;
-  border: 1px solid #ccc;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  height: 100%;
+}
+
+/* 반응형 디자인 */
+@media (max-width: 768px) {
+  .control-panel {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .formula-bar {
+    width: 100%;
+  }
+
+  .action-button {
+    width: 100%;
+  }
+}
+
+/* 다크 모드 지원 */
+@media (prefers-color-scheme: dark) {
+  .container {
+    background-color: #1e1e1e;
+  }
+
+  .control-panel {
+    background-color: #2d2d2d;
+  }
+
+  .formula-bar {
+    background-color: #2d2d2d;
+    border-color: #404040;
+  }
+
+  .formula-bar span {
+    color: #7aa2f7;
+    border-right-color: #404040;
+  }
+
+  .formula-bar input {
+    color: #ffffff;
+  }
+
+  .formula-bar input::placeholder {
+    color: #666666;
+  }
+
+  .relative {
+    border-color: #404040;
+  }
 }
 </style>
