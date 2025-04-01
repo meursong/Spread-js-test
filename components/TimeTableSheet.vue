@@ -124,8 +124,10 @@ function setupTimetableHeader(sheet) {
   }
 
   // 4. '시간/번호' 열 고정 텍스트
-  sheet.addSpan(1, 0, 2, 1);
-  sheet.setValue(1, 0, "시간/번호");
+  sheet.addSpan(1, 0, 1, 1);
+  sheet.setValue(1, 0, "날짜");
+  // 4. '시간/번호' 열 고정 텍스트
+  sheet.setValue(2, 0, "시간/학년");
 
   // 5. 스타일 적용
   sheet.getRange(0, 0, 3, 21).hAlign(GC.Spread.Sheets.HorizontalAlign.center)
