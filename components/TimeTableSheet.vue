@@ -19,6 +19,9 @@
     <!-- 차트 컨트롤 추가 -->
     <div class="chart-controls">
       <div class="control-group">
+        <button class="save-btn" @click="saveTimeTableToDB">시간표 저장</button>
+      </div>
+      <div class="control-group">
         <button class="chart-btn" @click="addColumnChart">막대 차트</button>
         <button class="chart-btn" @click="addLineChart">선 차트</button>
         <button class="chart-btn" @click="addPieChart">파이 차트</button>
@@ -136,7 +139,7 @@ function setupTimetableHeader(sheet) {
 
   // 열 너비 설정
   for (let i = 0; i < 21; i++) {
-    sheet.setColumnWidth(i, 60);
+    sheet.setColumnWidth(i, 100);
   }
 
   // 행 높이 설정
@@ -149,7 +152,7 @@ const timetableData = [
   // 월요일
   { day: "월", start: 2, span: 3, text: "Open Lab. (B반)\n과102" },
   { day: "월", start: 6, span: 2, text: "약리학\n(오창근)\n과210호" },
-  { day: "월", start: 8, span: 3, text: "임상간호술기 (A)\n(이재욱)\n과102호" },
+  { day: "월", start: 8, span: 3, text: "임상간호슬기 (A)\n(이재욱)\n과102호" },
 
   // 화요일
   { day: "화", start: 2, span: 2, text: "기본간호학2\n(김수현)\n과201호" },
@@ -158,6 +161,7 @@ const timetableData = [
 
   // 수요일
   { day: "수", start: 2, span: 2, text: "기본간호학실습\n(2C반)\n과204호" },
+  { day: "수", start: 4, span: 1, text: "기본간호학\n(3C반)\n과301호" },
   { day: "수", start: 6, span: 3, text: "성인간호학실습\n(이영주)\n본203호" }
 ];
 
@@ -218,6 +222,101 @@ function drawTimetable(sheet) {
   console.log("시간표가 생성되었습니다.");
 }
 
+/**
+ * 시간표 데이터를 추출하여 DB에 저장하기 위한 형식으로 변환하는 함수
+ * @returns {Array} DB에 저장할 수 있는 형태의 시간표 데이터 배열
+ */
+function extractTimetableData() {
+  if (!spreadRef.value) {
+    console.error('스프레드시트가 초기화되지 않았습니다.');
+    return [];
+  }
+
+  const sheet = spreadRef.value.getActiveSheet();
+  const result = [];
+  const headerRowCount = 3; // 헤더 영역 (제목, 요일, 교시번호)
+  const dayColumns = {
+    '월': 1, // 월요일은 1열부터 시작
+    '화': 5, // 화요일은 5열부터 시작
+    '수': 9, // 수요일은 9열부터 시작
+    '목': 13, // 목요일은 13열부터 시작
+    '금': 17  // 금요일은 17열부터 시작
+  };
+
+  // 역방향 매핑을 위한 객체
+  const columnToDay = {};
+  for (const [day, col] of Object.entries(dayColumns)) {
+    columnToDay[col] = day;
+    columnToDay[col+1] = day;
+    columnToDay[col+2] = day;
+    columnToDay[col+3] = day;
+  }
+
+  // 병합된 모든 셀을 가져옴
+  const spans = sheet.getSpans();
+
+  for (let i = 0; i < spans.length; i++) {
+    const span = spans[i];
+
+    // 헤더 영역에 있는 병합 셀은 무시
+    if (span.row < headerRowCount) {
+      continue;
+    }
+
+    // 시간 열(0번 열)에 있는 병합 셀은 무시
+    if (span.col === 0) {
+      continue;
+    }
+
+    // 해당 셀의 값 가져오기
+    const cellValue = sheet.getValue(span.row, span.col);
+
+    // 값이 없는 셀은 무시
+    if (!cellValue) {
+      continue;
+    }
+
+    // 셀의 열 위치에 따른 요일 결정
+    const day = columnToDay[span.col];
+
+    // 시작 교시와 종료 교시 계산
+    const startTime = span.row - headerRowCount + 1; // 1부터 시작하는 교시
+    const endTime = span.row + span.rowCount - headerRowCount; // 병합된 셀의 마지막 교시
+
+    // 교수명과 과목명 분리 (형식: "과목명(교수명)강의실")
+    let subjectName = cellValue;
+    let grade = '1'; // 기본값, 필요한 경우 다른 로직으로 대체
+
+    result.push({
+      subject_name: subjectName,
+      week_day: day,
+      grade: grade,
+      start_time: startTime,
+      end_time: endTime
+    });
+  }
+
+  return result;
+}
+
+// 시간표 데이터를 추출하여 DB에 저장하는 함수
+function saveTimeTableToDB() {
+  try {
+    const timetableData = extractTimetableData();
+    console.log('추출된 시간표 데이터:', timetableData);
+
+    // 여기에 DB 저장 로직 추가
+    // API 호출이나 다른 저장 메커니즘을 구현할 수 있습니다.
+    // axios.post('/api/timetable', { data: timetableData })
+    //   .then(response => console.log('저장 성공:', response))
+    //   .catch(error => console.error('저장 실패:', error));
+
+    return timetableData;
+  } catch (error) {
+    console.error('시간표 데이터 추출 중 오류:', error);
+    return [];
+  }
+}
 // ------------------------------------------------------------------------------------------------------------------------------------------------
 // ------------------------------------ 시간표 영역 END ------------------------------------------------------------------------
 
