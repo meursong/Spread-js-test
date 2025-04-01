@@ -27,6 +27,9 @@
         <NuxtLink to="/spreadsheet/chart-graph" class="nav-item">
           <span class="nav-text">차트 / 그래프</span>
         </NuxtLink>
+        <NuxtLink to="/spreadsheet/time-table" class="nav-item">
+          <span class="nav-text">시간표</span>
+        </NuxtLink>
       </div>
     </nav>
 
