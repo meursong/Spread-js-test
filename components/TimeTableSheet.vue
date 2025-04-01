@@ -162,6 +162,9 @@ const timetableData = [
 const dayMap = { "월": 1, "화": 2, "수": 3, "목": 4, "금": 5 };
 
 function drawTimetable(sheet) {
+  // 헤더 영역은 0~2행을 이미 사용하므로, 3행부터 시작
+  const headerRowCount = 3;
+
   const days = ["시간/요일", "월", "화", "수", "목", "금"];
   const times = [
     "1교시(09:00-09:50)", "2교시(09:50-10:40)", "3교시(10:40-11:30)",
@@ -170,35 +173,48 @@ function drawTimetable(sheet) {
     "10교시(16:50-17:40)", "11교시(17:40-18:30)"
   ];
 
-  // 헤더 설정
-  for (let col = 0; col < days.length; col++) {
-    sheet.setValue(0, col, days[col]);
-    sheet.setColumnWidth(col, 120);
-  }
-
+  // 시간 정보만 설정 (3행부터)
   for (let row = 0; row < times.length; row++) {
-    sheet.setValue(row + 1, 0, times[row]);
-    sheet.setRowHeight(row + 1, 50);
+    sheet.setValue(row + headerRowCount, 0, times[row]);
+    sheet.setRowHeight(row + headerRowCount, 50);
+
+    // 시간 셀에도 자동 줄바꿈 및 중앙 정렬 적용
+    const timeCell = sheet.getCell(row + headerRowCount, 0);
+    timeCell.wordWrap(true);
+    timeCell.hAlign(GC.Spread.Sheets.HorizontalAlign.center);
+    timeCell.vAlign(GC.Spread.Sheets.VerticalAlign.center);
   }
 
-  // 데이터 입력
+  // 데이터 입력 - 오프셋을 적용하여 시작 행 조정
   timetableData.forEach(item => {
     const col = dayMap[item.day];
-    const row = item.start;
+    const row = item.start + headerRowCount; // 헤더 행 수만큼 오프셋 추가
     const span = item.span;
     sheet.addSpan(row, col, span, 1);
     sheet.setValue(row, col, item.text);
+
+    // 각 데이터 셀에 대해 자동 줄바꿈 및 중앙 정렬 적용
+    const cell = sheet.getCell(row, col);
+    cell.wordWrap(true);
+    cell.hAlign(GC.Spread.Sheets.HorizontalAlign.center);
+    cell.vAlign(GC.Spread.Sheets.VerticalAlign.center);
   });
 
-  // 셀 스타일 적용
-  sheet.getRange(0, 0, times.length + 1, days.length)
-      .setBorder(new GC.Spread.Sheets.LineBorder("black", GC.Spread.Sheets.LineStyle.thin), { all: true })
+  // 모든 셀에 대한 기본 스타일 적용 (테두리, 정렬, 자동 줄바꿈)
+  const range = sheet.getRange(headerRowCount, 0, times.length, days.length);
+  range.setBorder(new GC.Spread.Sheets.LineBorder("black", GC.Spread.Sheets.LineStyle.thin), { all: true })
+      .wordWrap(true)
+      .hAlign(GC.Spread.Sheets.HorizontalAlign.center)
+      .vAlign(GC.Spread.Sheets.VerticalAlign.center);
+
+  // 헤더 영역에도 동일한 스타일 적용 (이미 setupTimetableHeader에서 설정했을 수도 있지만 확실히 하기 위해)
+  sheet.getRange(0, 0, headerRowCount, days.length)
+      .wordWrap(true)
       .hAlign(GC.Spread.Sheets.HorizontalAlign.center)
       .vAlign(GC.Spread.Sheets.VerticalAlign.center);
 
   console.log("시간표가 생성되었습니다.");
 }
-
 
 // ------------------------------------------------------------------------------------------------------------------------------------------------
 // ------------------------------------ 시간표 영역 END ------------------------------------------------------------------------
