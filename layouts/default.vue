@@ -3,30 +3,30 @@
     <!-- 사이드 네비게이션 -->
     <nav class="navigation">
       <div class="nav-header">
-        <h1 class="nav-title">엑셀관리</h1>
+        <h1 class="nav-title">엑셀 관리 모듈</h1>
       </div>
       <div class="nav-links">
-        <NuxtLink to="/" class="nav-item">
-          <span class="nav-text">홈</span>
-        </NuxtLink>
+<!--        <NuxtLink to="/" class="nav-item">-->
+<!--          <span class="nav-text">홈</span>-->
+<!--        </NuxtLink>-->
         <NuxtLink to="/spreadsheet/empty" class="nav-item">
-          <span class="nav-text">빈 엑셀</span>
+          <span class="nav-text">역량 관리</span>
         </NuxtLink>
         <NuxtLink to="/spreadsheet/excel-test" class="nav-item">
-          <span class="nav-text">열기 / 내보내기</span>
+          <span class="nav-text">직무 관리</span>
         </NuxtLink>
         <NuxtLink to="/spreadsheet/data-types" class="nav-item">
-          <span class="nav-text">데이터 타입</span>
+          <span class="nav-text">교육명세 관리</span>
         </NuxtLink>
         <NuxtLink to="/spreadsheet/data-binding" class="nav-item">
-          <span class="nav-text">데이터 바인딩</span>
+          <span class="nav-text">행동지표 관리</span>
         </NuxtLink>
-        <NuxtLink to="/spreadsheet/formulas" class="nav-item">
-          <span class="nav-text">수식</span>
-        </NuxtLink>
-        <NuxtLink to="/spreadsheet/chart-graph" class="nav-item">
-          <span class="nav-text">차트 / 그래프</span>
-        </NuxtLink>
+<!--        <NuxtLink to="/spreadsheet/formulas" class="nav-item">-->
+<!--          <span class="nav-text">수식</span>-->
+<!--        </NuxtLink>-->
+<!--        <NuxtLink to="/spreadsheet/chart-graph" class="nav-item">-->
+<!--          <span class="nav-text">차트 / 그래프</span>-->
+<!--        </NuxtLink>-->
       </div>
     </nav>
 
@@ -97,7 +97,7 @@
 
 /* Nuxt의 active 클래스에 대한 스타일 */
 .router-link-active {
-  background-color: #4472C4;
+  background-color: #268273;
   color: white;
 }
 
@@ -116,7 +116,7 @@
   .navigation {
     width: 100%;
     border-right: none;
-    border-bottom: 1px solid #e0e0e0;
+    border-bottom: 1px solid #268273;
   }
 
   .nav-links {

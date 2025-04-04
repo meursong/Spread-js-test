@@ -1,25 +1,25 @@
 <template>
   <div>
     <div class="control-panel">
-      <button class="action-button" @click="handleInsertFunction('SUM')">=SUM()</button>
-      <button class="action-button" @click="handleInsertFunction('COUNT')">=COUNT()</button>
-      <button class="action-button" @click="handleInsertFunction('MAX')">=MAX()</button>
-      <button class="action-button" @click="handleInsertFunction('MIN')">=MIN()</button>
-      <!-- 수식 입력 바 -->
-      <div class="formula-bar">
-        <span>fx</span>
-        <input
-            v-model="localFormulaText"
-            @keyup.enter="handleApplyFormula"
-            @click="handleCopyFormulaToClipboard"
-            placeholder="수식을 입력하세요"
-        />
-      </div>
+      <button class="action-button" @click="handleInsertFunction('SUM')">합계</button>
+      <button class="action-button" @click="handleInsertFunction('COUNT')">카운트</button>
+      <button class="action-button" @click="handleInsertFunction('MAX')">최댓값</button>
+      <button class="action-button" @click="handleInsertFunction('MIN')">최솟값</button>
+      <button class="action-button" @click="handleMergeCells">선택 영역 병합</button>
+      <button class="action-button" @click="handleUnmergeCells">병합 해제</button>
+<!--      &lt;!&ndash; 수식 입력 바 &ndash;&gt;-->
+<!--      <div class="formula-bar">-->
+<!--        <span>fx</span>-->
+<!--        <input-->
+<!--            v-model="localFormulaText"-->
+<!--            @keyup.enter="handleApplyFormula"-->
+<!--            @click="handleCopyFormulaToClipboard"-->
+<!--            placeholder="수식을 입력하세요"-->
+<!--        />-->
+<!--      </div>-->
     </div>
 
     <div class="control-panel">
-      <button class="action-button" @click="handleMergeCells">선택 영역 병합</button>
-      <button class="action-button" @click="handleUnmergeCells">병합 해제</button>
     </div>
 
     <!-- 텍스트 서식 패널 추가 -->

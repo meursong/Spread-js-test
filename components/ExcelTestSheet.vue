@@ -2,11 +2,22 @@
   <div class="main-container">
     <!-- 스프레드시트 영역 (80%) -->
     <div class="spreadsheet-area">
+
+      <!-- RibonMenu 컴포넌트 추가 -->
+      <PublishingRibonMenu
+      />
+
       <gc-spread-sheets
           v-show="showSpreadsheet"
           class="spread-host"
           @workbookInitialized="initSpread">
       </gc-spread-sheets>
+
+      <!-- 하단 버튼 영역 추가 -->
+      <div class="bottom-buttons" style="margin-top: 20px">
+        <button class="action-button">정합성 체크</button>
+        <button class="action-button">등록</button>
+      </div>
     </div>
 
     <!-- 버튼 및 컨트롤 영역 (20%) -->
@@ -34,6 +45,10 @@ import * as GC from "@mescius/spread-sheets";
 import { GcSpreadSheets } from '@mescius/spread-sheets-vue'
 import "@mescius/spread-sheets-io";
 import { saveAs } from "file-saver";
+
+// RibonMenu 컴포넌트 import
+import RibonMenu from './RibonMenu.vue';
+import PublishingRibonMenu from "~/components/PublishingRibonMenu.vue";
 
 // 반응형 상태 정의
 const spread = ref(null);
@@ -168,7 +183,7 @@ const saveExcel = () => {
 /* 스프레드시트 영역 (80%) */
 .spreadsheet-area {
   width: 80%;
-  height: 80%;
+  height: 50%;
 }
 
 /* 스프레드 호스트가 부모 컨테이너를 채우도록 설정 */
@@ -205,7 +220,7 @@ const saveExcel = () => {
 /* 버튼 스타일 */
 .button {
   padding: 10px;
-  background-color: #4CAF50;
+  background-color: #268273;
   color: white;
   border: none;
   border-radius: 4px;
@@ -214,7 +229,7 @@ const saveExcel = () => {
 }
 
 .button:hover {
-  background-color: #45a049;
+  background-color: #268273;
 }
 
 /* 문단 스타일 */
@@ -222,4 +237,37 @@ p {
   margin-bottom: 5px;
   font-weight: bold;
 }
+.bottom-buttons {
+  display: flex;
+  justify-content: left;
+  gap: 20px;
+  margin-top: 20px;
+  padding: 10px 0;
+  width: 100%;
+}
+
+.action-button {
+  padding: 10px 20px;
+  font-size: 14px;
+  background-color: #268273;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  min-width: 120px;
+}
+
+.action-button:hover {
+  background-color: #45a049;
+}
+
+.action-button:first-child {
+  background-color: #4472C4;
+}
+
+.action-button:first-child:hover {
+  background-color: #4472C4;
+}
+
 </style>
