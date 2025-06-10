@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:developer.mescius.com)"
+    ],
+    "deny": []
+  }
+}
